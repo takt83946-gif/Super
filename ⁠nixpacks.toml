@@ -1,2 +1,2 @@
 [phases.setup]
-phpPkgs = ["pdo_mysql", "mysqli"]
+phpPkgs = ["mysqli", "pdo_mysql"]
