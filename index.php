@@ -1,4 +1,7 @@
 <?php
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+<?php
 // إعدادات الاتصال بقاعدة البيانات عبر MySQLi
 $host = getenv('MYSQLHOST') ?: 'localhost';
 $username = getenv('MYSQLUSER') ?: 'root';$password = getenv('MYSQLPASSWORD') ?: '';
