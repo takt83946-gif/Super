@@ -2,34 +2,41 @@
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-// استخدام SQLite المحلية (تعمل فوراً بدون أي أخطاء أو حزم ناقصة)
-try {
-    $db_file = __DIR__ . '/store.db';
-    $conn = new PDO('sqlite:' . $db_file);
-    $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+// جلب بيانات الاتصال من متغيرات البيئة في Railway
+$host = getenv('MYSQLHOST');
+$username = getenv('MYSQLUSER');
+$password = getenv('MYSQLPASSWORD');
+$database = getenv('MYSQLDATABASE');
+$port = getenv('MYSQLPORT');
 
-    // إنشاء جدول المنتجات
-    $conn->exec("CREATE TABLE IF NOT EXISTS products (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        price REAL NOT NULL,
-        image TEXT DEFAULT 'https://images.unsplash.com/photo-1523275335684-37898b6baf30'
-    )");
+// استخدام MySQLi للاتصال
+$conn = @new mysqli($host, $username, $password, $database, $port);
 
-    // إضافة منتجات تجريبية إن كان الجدول فارغاً
-    $stmt = $conn->query("SELECT COUNT(*) FROM products");
-    if ($stmt->fetchColumn() == 0) {
-        $conn->exec("INSERT INTO products (name, price, image) VALUES 
-            ('ساعة رولكس كلاسيكية', 1250.00, 'https://images.unsplash.com/photo-1523275335684-37898b6baf30'),
-            ('عطر نيش الملكي', 450.00, 'https://images.unsplash.com/photo-1541643600914-78b084683601'),
-            ('قلادة ألماس عيار 18', 2450.00, 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f')");
-    }
-
-    $products = $conn->query("SELECT * FROM products");
-
-} catch (Exception $e) {
-    die("<h2 style='text-align:center; color:red; margin-top:50px;'>خطأ في قاعدة البيانات: " . $e->getMessage() . "</h2>");
+if ($conn->connect_error) {
+    die("<h3 style='text-align:center; color:red; margin-top:50px;'>خطأ في الاتصال بقاعدة بيانات Railway: " . $conn->connect_error . "</h3>");
 }
+
+$conn->set_charset("utf8mb4");
+
+// إنشاء جدول المنتجات إن لم يكن موجوداً
+$conn->query("CREATE TABLE IF NOT EXISTS products (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    price DECIMAL(10, 2) NOT NULL,
+    image VARCHAR(500) DEFAULT 'https://images.unsplash.com/photo-1523275335684-37898b6baf30'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+
+// إضافة منتجات تجريبية لو الجدول فارغ
+$res = $conn->query("SELECT COUNT(*) as cnt FROM products");
+$row = $res ? $res->fetch_assoc() : ['cnt' => 0];
+if ($row['cnt'] == 0) {
+    $conn->query("INSERT INTO products (name, price, image) VALUES 
+        ('ساعة رولكس كلاسيكية', 1250.00, 'https://images.unsplash.com/photo-1523275335684-37898b6baf30'),
+        ('عطر نيش الملكي', 450.00, 'https://images.unsplash.com/photo-1541643600914-78b084683601'),
+        ('قلادة ألماس عيار 18', 2450.00, 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f')");
+}
+
+$products = $conn->query("SELECT * FROM products");
 ?>
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -53,12 +60,12 @@ try {
 </head>
 <body>
 
-<header>✨ المتجر الملكي الفاخر ✨</header>
+<header>✨ المتجر الملكي الفاخر (مرتبط بـ MySQL) ✨</header>
 
 <div class="container">
-    <h2>المنتجات المتوفرة</h2>
+    <h2>المنتجات المتوفرة من قاعدة البيانات</h2>
     <div class="grid">
-        <?php while($p = $products->fetch(PDO::FETCH_ASSOC)): ?>
+        <?php while($p = $products->fetch_assoc()): ?>
             <div class="card">
                 <img src="<?php echo $p['image']; ?>" alt="منتج">
                 <h3><?php echo htmlspecialchars($p['name']); ?></h3>
