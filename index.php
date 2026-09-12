@@ -2,23 +2,24 @@
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-// جلب بيانات الاتصال من متغيرات البيئة في Railway
-$host = getenv('MYSQLHOST');
-$username = getenv('MYSQLUSER');
-$password = getenv('MYSQLPASSWORD');
-$database = getenv('MYSQLDATABASE');
-$port = getenv('MYSQLPORT');
+// جلب بيانات الاتصال من متغيرات البيئة في ريلواي مع وضع قيم افتراضية آمنة
+$host = getenv('MYSQLHOST') ?: '127.0.0.1';
+$username = getenv('MYSQLUSER') ?: 'root';
+$password = getenv('MYSQLPASSWORD') ?: '';
+$database = getenv('MYSQLDATABASE') ?: 'railway';
+$port = (int)(getenv('MYSQLPORT') ?: 3306);
 
-// استخدام MySQLi للاتصال
-$conn = @new mysqli($host, $username, $password, $database, $port);
+// الاتصال مع تحديد المضيف والمنفذ بدقة لمنع خطأ الـ Socket
+$conn = @new mysqli($host, $username, $password, "", $port);
 
 if ($conn->connect_error) {
-    die("<h3 style='text-align:center; color:red; margin-top:50px;'>خطأ في الاتصال بقاعدة بيانات Railway: " . $conn->connect_error . "</h3>");
+    die("<h3 style='text-align:center; color:red; margin-top:50px;'>خطأ في الاتصال: " . $conn->connect_error . "</h3>");
 }
 
 $conn->set_charset("utf8mb4");
+$conn->query("CREATE DATABASE IF NOT EXISTS `$database` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;");
+$conn->select_db($database);
 
-// إنشاء جدول المنتجات إن لم يكن موجوداً
 $conn->query("CREATE TABLE IF NOT EXISTS products (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
@@ -26,7 +27,6 @@ $conn->query("CREATE TABLE IF NOT EXISTS products (
     image VARCHAR(500) DEFAULT 'https://images.unsplash.com/photo-1523275335684-37898b6baf30'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
 
-// إضافة منتجات تجريبية لو الجدول فارغ
 $res = $conn->query("SELECT COUNT(*) as cnt FROM products");
 $row = $res ? $res->fetch_assoc() : ['cnt' => 0];
 if ($row['cnt'] == 0) {
@@ -60,10 +60,10 @@ $products = $conn->query("SELECT * FROM products");
 </head>
 <body>
 
-<header>✨ المتجر الملكي الفاخر (مرتبط بـ MySQL) ✨</header>
+<header>✨ المتجر الملكي الفاخر ✨</header>
 
 <div class="container">
-    <h2>المنتجات المتوفرة من قاعدة البيانات</h2>
+    <h2>المنتجات المتوفرة</h2>
     <div class="grid">
         <?php while($p = $products->fetch_assoc()): ?>
             <div class="card">
