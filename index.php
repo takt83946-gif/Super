@@ -2,38 +2,35 @@
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-// جلب بيانات الاتصال من متغيرات البيئة في ريلواي مع وضع قيم افتراضية آمنة
-$host = getenv('MYSQLHOST') ?: '127.0.0.1';
-$username = getenv('MYSQLUSER') ?: 'root';
-$password = getenv('MYSQLPASSWORD') ?: '';
-$database = getenv('MYSQLDATABASE') ?: 'railway';
-$port = (int)(getenv('MYSQLPORT') ?: 3306);
+$host = getenv('MYSQLHOST') ?: getenv('MYSQL_HOST') ?: '127.0.0.1';
+$username = getenv('MYSQLUSER') ?: getenv('MYSQL_USER') ?: 'root';
+$password = getenv('MYSQLPASSWORD') ?: getenv('MYSQL_PASSWORD') ?: '';
+$database = getenv('MYSQLDATABASE') ?: getenv('MYSQL_DATABASE') ?: 'railway';
+$port = (int)(getenv('MYSQLPORT') ?: getenv('MYSQL_PORT') ?: 3306);
 
-// الاتصال مع تحديد المضيف والمنفذ بدقة لمنع خطأ الـ Socket
-$conn = @new mysqli($host, $username, $password, "", $port);
-
+$conn = @new mysqli($host, $username, $password, $database, $port);
 if ($conn->connect_error) {
-    die("<h3 style='text-align:center; color:red; margin-top:50px;'>خطأ في الاتصال: " . $conn->connect_error . "</h3>");
+    die("خطأ في الاتصال بقاعدة البيانات");
 }
-
 $conn->set_charset("utf8mb4");
-$conn->query("CREATE DATABASE IF NOT EXISTS `$database` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;");
-$conn->select_db($database);
 
 $conn->query("CREATE TABLE IF NOT EXISTS products (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     price DECIMAL(10, 2) NOT NULL,
-    image VARCHAR(500) DEFAULT 'https://images.unsplash.com/photo-1523275335684-37898b6baf30'
+    image VARCHAR(500) DEFAULT 'https://images.unsplash.com/photo-1542838132-92c53300491e'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
 
 $res = $conn->query("SELECT COUNT(*) as cnt FROM products");
 $row = $res ? $res->fetch_assoc() : ['cnt' => 0];
 if ($row['cnt'] == 0) {
     $conn->query("INSERT INTO products (name, price, image) VALUES 
-        ('ساعة رولكس كلاسيكية', 1250.00, 'https://images.unsplash.com/photo-1523275335684-37898b6baf30'),
-        ('عطر نيش الملكي', 450.00, 'https://images.unsplash.com/photo-1541643600914-78b084683601'),
-        ('قلادة ألماس عيار 18', 2450.00, 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f')");
+        ('حليب طازج 1 لتر', 2.50, 'https://images.unsplash.com/photo-1563636619-e9143da7973b'),
+        ('خبز أبيض طازج', 1.00, 'https://images.unsplash.com/photo-1509440159596-0249088772ff'),
+        ('تفاح ريد ديلشيش (كغ)', 3.20, 'https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6'),
+        ('موز طازج (كغ)', 2.80, 'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e'),
+        ('جبنة كلاسيكية بيضاء', 5.00, 'https://images.unsplash.com/photo-1486297678162-eb2a19b0a32d'),
+        ('مياه معدنية (عبوة)', 0.50, 'https://images.unsplash.com/photo-1548839140-29a749e1cf4d')");
 }
 
 $products = $conn->query("SELECT * FROM products");
@@ -43,34 +40,40 @@ $products = $conn->query("SELECT * FROM products");
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>المتجر الملكي الفاخر</title>
+    <title>سوبرماركت الخير - تسوق أونلاين</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Cairo', sans-serif; background: #f4f4f4; margin: 0; padding: 0; }
-        header { background: #111; color: #d4af37; padding: 20px; text-align: center; font-size: 24px; font-weight: bold; }
+        body { font-family: 'Cairo', sans-serif; background: #f9f9f9; margin: 0; padding: 0; }
+        header { background: #27ae60; color: #fff; padding: 20px; text-align: center; font-size: 24px; font-weight: bold; }
+        .top-bar { text-align: left; padding: 10px 20px; background: #2196f3; }
+        .top-bar a { color: #fff; text-decoration: none; font-weight: bold; background: rgba(0,0,0,0.1); padding: 5px 10px; border-radius: 4px; }
         .container { max-width: 1000px; margin: 20px auto; padding: 15px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
-        .card { background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); text-align: center; padding-bottom: 15px; }
-        .card img { width: 100%; height: 180px; object-fit: cover; }
-        .card h3 { margin: 15px 0 10px; font-size: 18px; }
-        .card p { color: #d4af37; font-size: 18px; font-weight: bold; margin-bottom: 15px; }
-        .btn { background: #111; color: #d4af37; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        .btn:hover { background: #d4af37; color: #111; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
+        .card { background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); text-align: center; padding-bottom: 15px; border: 1px solid #eee; }
+        .card img { width: 100%; height: 160px; object-fit: cover; }
+        .card h3 { margin: 12px 0 8px; font-size: 18px; color: #333; }
+        .card p { color: #e67e22; font-size: 18px; font-weight: bold; margin-bottom: 12px; }
+        .btn { background: #27ae60; color: #fff; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer; font-weight: bold; font-family: 'Cairo', sans-serif; }
+        .btn:hover { background: #2196f3; }
     </style>
 </head>
 <body>
 
-<header>✨ المتجر الملكي الفاخر ✨</header>
+<div class="top-bar">
+    <a href="admin.php">⚙️ لوحة التحكم</a>
+</div>
+
+<header>🛒 سوبرماركت الخير - طازج كل يوم</header>
 
 <div class="container">
-    <h2>المنتجات المتوفرة</h2>
+    <h2>المنتجات والسلع الغذائية</h2>
     <div class="grid">
         <?php while($p = $products->fetch_assoc()): ?>
             <div class="card">
                 <img src="<?php echo $p['image']; ?>" alt="منتج">
                 <h3><?php echo htmlspecialchars($p['name']); ?></h3>
                 <p>$<?php echo number_format($p['price'], 2); ?></p>
-                <button class="btn" onclick="alert('تمت الإضافة إلى السلة بنجاح!')">إضافة للسلة</button>
+                <button class="btn" onclick="alert('تمت إضافة المنتج إلى سلة المشتريات!')">إضافة للسلة</button>
             </div>
         <?php endwhile; ?>
     </div>
