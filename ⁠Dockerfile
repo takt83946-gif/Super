@@ -1,8 +1,0 @@
-FROM php:8.2-apache
-RUN docker-php-ext-install mysqli pdo pdo_mysql
-
-# توجيه أباتشي للاستماع لمنفذ ريلواي الصحيح
-RUN echo "Listen 0.0.0.0:\${PORT:-80}" > /etc/apache2/ports.conf
-RUN echo "<VirtualHost *:\${PORT:-80}>\nDocumentRoot /var/www/html\nErrorLog \${APACHE_LOG_DIR}/error.log\nCustomLog \${APACHE_LOG_DIR}/access.log combined\n</VirtualHost>" > /etc/apache2/sites-available/000-default.conf
-
-COPY . /var/www/html/
