@@ -22,7 +22,7 @@ $categories_result = $conn->query($categories_sql);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>سوبرماركت الساحة</title>
+    <title>Ali And Store</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -246,7 +246,7 @@ $categories_result = $conn->query($categories_sql);
 <body>
 
 <header>
-    <h1>سوبرماركت الساحة</h1>
+    <h1>Ali And Store</h1>
     <button class="cart-icon-btn" onclick="toggleCartModal()">🛒 سلة المشتريات (<span id="cart-count">0</span>)</button>
 </header>
 
@@ -283,7 +283,7 @@ $categories_result = $conn->query($categories_sql);
     </div>
 
     <!-- 3. About الموقع -->
-    <div class="nav-item" onclick="alert('سوبرماركت الساحة: نقدم أفضل المنتجات الاستهلاكية والغذائية الطازجة بأفضل الأسعار لتلبية احتياجاتك اليومية.');" style="cursor: pointer;">
+    <div class="nav-item" onclick="alert('Ali And Store: نقدم أفضل المنتجات الاستهلاكية والغذائية بأفضل الأسعار لتلبية احتياجاتك اليومية.');" style="cursor: pointer;">
         ℹ️ عن الموقع (About)
     </div>
 
@@ -414,7 +414,7 @@ function sendToWhatsApp() {
         return;
     }
 
-    let message = "مرحباً، أريد طلب المنتجات التالية من سوبرماركت الساحة:\n\n";
+    let message = "مرحباً، أريد طلب المنتجات التالية من Ali And Store:\n\n";
     let totalPrice = 0;
 
     cart.forEach(item => {
