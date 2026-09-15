@@ -1,13 +1,14 @@
 <?php
-$host = 'localhost';
-$dbname = 'store_db';
-$username = 'root';
-$password = '';
+$host = getenv('MYSQLHOST') ?: 'localhost';
+$username = getenv('MYSQLUSER') ?: 'root';
+$password = getenv('MYSQLPASSWORD') ?: '';
+$database = getenv('MYSQLDATABASE') ?: 'test';
+$port = getenv('MYSQLPORT') ?: '3306';
 
 try {
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch (PDOException $e) {
-    die("خطأ في الاتصال بقاعدة البيانات: " . $e->getMessage());
+    $conn = new PDO("mysql:host=$host;port=$port;dbname=$database;charset=utf8mb4", $username, $password);
+    $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+} catch(PDOException $e) {
+    echo "خطأ في الاتصال بقاعدة البيانات: " . $e->getMessage();
 }
 ?>
