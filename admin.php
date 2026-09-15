@@ -1,7 +1,7 @@
 <?php
 require_once 'config.php';
 
-// إنشاء الجداول اللازمة تلقائياً إن لم تكن موجودة
+// تحديث هيكل الجداول وإنشاؤها تلقائياً مع الحقول الجديدة
 try {
     $conn->exec("CREATE TABLE IF NOT EXISTS products (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -12,6 +12,15 @@ try {
         image VARCHAR(255) DEFAULT '',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )");
+
+    // إضافة الأعمدة إن لم تكن موجودة مسبقاً في الجدول القديم
+    $columns = $conn->query("SHOW COLUMNS FROM products")->fetchAll(PDO::FETCH_COLUMN);
+    if (!in_array('currency', $columns)) {
+        $conn->exec("ALTER TABLE products ADD COLUMN currency VARCHAR(10) DEFAULT '$'");
+    }
+    if (!in_array('image', $columns)) {
+        $conn->exec("ALTER TABLE products ADD COLUMN image VARCHAR(255) DEFAULT ''");
+    }
 
     $conn->exec("CREATE TABLE IF NOT EXISTS orders (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -32,7 +41,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_product'])) {
     $category = trim($_POST['category']);
     $imagePath = "";
 
-    // رفع الصورة من الهاتف
     if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
         $uploadDir = 'uploads/';
         if (!is_dir($uploadDir)) {
@@ -73,22 +81,19 @@ if (isset($_GET['delete_product'])) {
     exit();
 }
 
-// حساب إحصائيات المبيعات اليومية والشهرية
+// إحصائيات المبيعات
 try {
     $today = date('Y-m-d');
     $thisMonth = date('Y-m');
 
-    // مبيعات اليوم
     $stmtToday = $conn->prepare("SELECT COUNT(*) as count FROM orders WHERE DATE(order_date) = ?");
     $stmtToday->execute([$today]);
     $salesToday = $stmtToday->fetch(PDO::FETCH_ASSOC)['count'];
 
-    // مبيعات الشهر
     $stmtMonth = $conn->prepare("SELECT COUNT(*) as count FROM orders WHERE DATE_FORMAT(order_date, '%Y-%m') = ?");
     $stmtMonth->execute([$thisMonth]);
     $salesMonth = $stmtMonth->fetch(PDO::FETCH_ASSOC)['count'];
 
-    // جلب المنتجات والطلبات
     $products = $conn->query("SELECT * FROM products ORDER BY id DESC")->fetchAll(PDO::FETCH_ASSOC);
     $orders = $conn->query("SELECT * FROM orders ORDER BY id DESC LIMIT 20")->fetchAll(PDO::FETCH_ASSOC);
 } catch(PDOException $e) {
@@ -118,7 +123,6 @@ try {
             <div class="alert alert-info text-center fw-bold"><?= htmlspecialchars($message); ?></div>
         <?php endif; ?>
 
-        <!-- بطاقات الإحصائيات (المبيعات) -->
         <div class="row g-3 mb-4">
             <div class="col-6">
                 <div class="card bg-primary text-white shadow-sm border-0 text-center p-3">
@@ -134,7 +138,6 @@ try {
             </div>
         </div>
 
-        <!-- نموذج إضافة منتج جديد مع صورة وعملة -->
         <div class="card shadow-sm border-0 mb-4">
             <div class="card-header bg-dark text-white fw-bold">
                 <i class="fa-solid fa-plus-circle"></i> إضافة منتج جديد (صورة + سعر بالدولار أو الليرة)
@@ -174,7 +177,6 @@ try {
             </div>
         </div>
 
-        <!-- طلبات الزبائن الواردة -->
         <div class="card shadow-sm border-0 mb-4">
             <div class="card-header bg-secondary text-white fw-bold">
                 <i class="fa-solid fa-shopping-bag"></i> أحدث طلبات الزبائن
@@ -211,7 +213,6 @@ try {
             </div>
         </div>
 
-        <!-- إدارة المنتجات الحالية -->
         <div class="card shadow-sm border-0">
             <div class="card-header bg-primary text-white fw-bold">
                 <i class="fa-solid fa-list"></i> إدارة المنتجات الحالية
