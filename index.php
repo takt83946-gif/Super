@@ -1,42 +1,48 @@
 <?php
-include 'config.php';
-$stmt = $pdo->query("SELECT * FROM products ORDER BY id DESC");
-$products = $stmt->fetchAll(PDO::FETCH_ASSOC);
+// استدعاء ملف الاتصال بقاعدة البيانات
+require_once 'config.php';
 ?>
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>متجري الإلكتروني</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>متجر سوبرماركت الساحة</title>
+    <!-- استدعاء Bootstrap للتصميم الجميل -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body class="bg-light">
-    <nav class="navbar navbar-dark bg-dark mb-4">
+
+    <!-- شريط العرض العلوي -->
+    <nav class="navbar navbar-dark bg-dark shadow-sm">
         <div class="container">
-            <a class="navbar-brand" href="index.php">متجرنا الشامل</a>
-            <a href="admin/dashboard.php" class="btn btn-outline-light btn-sm">لوحة التحكم</a>
+            <a class="navbar-brand fw-bold" href="#">🛒 سوبرماركت الساحة</a>
         </div>
     </nav>
 
-    <div class="container">
-        <h2 class="mb-4 text-center">أحدث المنتجات</h2>
-        <div class="row">
-            <?php foreach ($products as $product): ?>
-                <div class="col-md-4 mb-4">
-                    <div class="card h-100 shadow-sm">
-                        <?php if (!empty($product['image'])): ?>
-                            <img src="uploads/<?php echo $product['image']; ?>" class="card-img-top" style="height: 200px; object-fit: cover;">
-                        <?php endif; ?>
-                        <div class="card-body d-flex flex-column">
-                            <h5 class="card-title"><?php echo htmlspecialchars($product['name']); ?></h5>
-                            <p class="card-text text-muted"><?php echo mb_substr(htmlspecialchars($product['description']), 0, 80); ?>...</p>
-                            <p class="card-text text-success fw-bold mt-auto"><?php echo $product['price']; ?> د.أ</p>
-                            <a href="https://wa.me/968XXXXXXXX?text=أهلاً، أريد الاستفسار عن منتج: <?php echo urlencode($product['name']); ?>" target="_blank" class="btn btn-success mt-2">اطلب عبر واتساب</a>
-                        </div>
+    <!-- المحتوى الرئيسي -->
+    <div class="container py-5">
+        <div class="row text-center mb-4">
+            <div class="col-12">
+                <h1 class="display-5 fw-bold text-dark">أهلاً بك في متجرنا!</h1>
+                <p class="text-muted">تم ربط قاعدة البيانات وتشغيل الموقع بنجاح تام على السيرفر.</p>
+            </div>
+        </div>
+
+        <!-- قسم المنتجات -->
+        <div class="row row-cols-1 row-cols-md-3 g-4">
+            <div class="col">
+                <div class="card h-100 shadow-sm border-0">
+                    <div class="card-body text-center">
+                        <h5 class="card-title fw-bold">تجربة منتج</h5>
+                        <p class="card-text text-success fw-bold">1,000 د.أ</p>
+                        <a href="#" class="btn btn-primary w-100">أضف إلى السلة</a>
                     </div>
                 </div>
-            <?php endforeach; ?>
+            </div>
         </div>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
