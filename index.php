@@ -53,6 +53,48 @@ $categories_result = $conn->query($categories_sql);
             margin: 0;
             font-size: 24px;
         }
+        
+        /* شريط التنقل العلوي (Navbar) للعناصر الأربعة */
+        .navbar-bar {
+            background-color: #34495e;
+            color: white;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .nav-item {
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            position: relative;
+        }
+        .nav-item a {
+            color: white;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        .nav-item a:hover {
+            color: #3498db;
+        }
+        .color-picker-container {
+            display: inline-flex;
+            gap: 8px;
+            align-items: center;
+            vertical-align: middle;
+        }
+        .color-circle {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 1px solid white;
+            display: inline-block;
+        }
+
         .cart-icon-btn {
             background-color: var(--btn-cart);
             color: white;
@@ -132,66 +174,6 @@ $categories_result = $conn->query($categories_sql);
             opacity: 0.9;
         }
         
-        /* تصميم الفوتر السفلي المطلوب */
-        footer {
-            background-color: var(--primary-color);
-            color: white;
-            padding: 30px 20px;
-            margin-top: 50px;
-            transition: background-color 0.3s;
-        }
-        .footer-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 25px;
-        }
-        .footer-section h3 {
-            font-size: 18px;
-            border-bottom: 2px solid var(--accent-color);
-            padding-bottom: 8px;
-            margin-bottom: 15px;
-        }
-        .footer-section ul {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-        .footer-section ul li {
-            margin-bottom: 8px;
-        }
-        .footer-section ul li a {
-            color: #ddd;
-            text-decoration: none;
-            transition: color 0.2s;
-        }
-        .footer-section ul li a:hover {
-            color: white;
-            text-decoration: underline;
-        }
-        .color-options {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-        }
-        .color-circle {
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            cursor: pointer;
-            border: 2px solid white;
-            display: inline-block;
-        }
-        .footer-bottom {
-            text-align: center;
-            border-top: 1px solid rgba(255,255,255,0.1);
-            margin-top: 25px;
-            padding-top: 15px;
-            font-size: 14px;
-            color: #ccc;
-        }
-
         /* تصميم نافذة سلة المشتريات المنبثقة */
         .modal {
             display: none;
@@ -268,6 +250,49 @@ $categories_result = $conn->query($categories_sql);
     <button class="cart-icon-btn" onclick="toggleCartModal()">🛒 سلة المشتريات (<span id="cart-count">0</span>)</button>
 </header>
 
+<!-- شريط البار العلوي (يحتوي العناصر الأربعة) -->
+<div class="navbar-bar">
+    <!-- 1. المنيو -->
+    <div class="nav-item">
+        📋 المنيو: 
+        <select id="menuSelect" onchange="location = this.value;" style="background:#2c3e50; color:white; border:1px solid #ccc; padding:3px; border-radius:4px; font-family:'Cairo';">
+            <option value="">اختر القسم...</option>
+            <?php
+            $conn_m = new mysqli($host, $user, $pass, $dbname, (int)$port);
+            $conn_m->set_charset("utf8");
+            $cat_m_result = $conn_m->query("SELECT DISTINCT category FROM products WHERE category IS NOT NULL AND category != ''");
+            if ($cat_m_result) {
+                while ($cm = $cat_m_result->fetch_assoc()) {
+                    echo '<option value="#cat-' . md5($cm['category']) . '">' . htmlspecialchars($cm['category']) . '</option>';
+                }
+            }
+            $conn_m->close();
+            ?>
+        </select>
+    </div>
+
+    <!-- 2. زر تغيير اللون -->
+    <div class="nav-item">
+        🎨 لون الموقع:
+        <div class="color-picker-container">
+            <span class="color-circle" style="background-color: #2c3e50;" onclick="changeTheme('#2c3e50', '#3498db')" title="كلاسيكي"></span>
+            <span class="color-circle" style="background-color: #8e44ad;" onclick="changeTheme('#8e44ad', '#9b59b6')" title="بنفسجي"></span>
+            <span class="color-circle" style="background-color: #d35400;" onclick="changeTheme('#d35400', '#e67e22')" title="برتقالي"></span>
+            <span class="color-circle" style="background-color: #16a085;" onclick="changeTheme('#16a085', '#1abc9c')" title="تركواز"></span>
+        </div>
+    </div>
+
+    <!-- 3. About الموقع -->
+    <div class="nav-item" onclick="alert('سوبرماركت الساحة: نقدم أفضل المنتجات الاستهلاكية والغذائية الطازجة بأفضل الأسعار لتلبية احتياجاتك اليومية.');" style="cursor: pointer;">
+        ℹ️ عن الموقع (About)
+    </div>
+
+    <!-- 4. التواصل معنا -->
+    <div class="nav-item">
+        📞 تواصل معنا: <a href="https://wa.me/96181058043" target="_blank" style="color: #2ecc71; font-weight: bold;">+96181058043</a>
+    </div>
+</div>
+
 <div class="container">
     <?php
     if ($categories_result && $categories_result->num_rows > 0) {
@@ -309,62 +334,6 @@ $categories_result = $conn->query($categories_sql);
     $conn->close();
     ?>
 </div>
-
-<!-- الفوتر السفلي (الأقسام الأربعة المطلوبة) -->
-<footer>
-    <div class="footer-container">
-        <!-- 1. المنيو (التصنيفات) -->
-        <div class="footer-section">
-            <h3>المنيو (التصنيفات)</h3>
-            <ul>
-                <?php
-                // إعادة الاتصال لجلب التصنيفات للفوتر
-                $conn_f = new mysqli($host, $user, $pass, $dbname, (int)$port);
-                $conn_f->set_charset("utf8");
-                $cat_f_result = $conn_f->query("SELECT DISTINCT category FROM products WHERE category IS NOT NULL AND category != ''");
-                if ($cat_f_result) {
-                    while ($cf = $cat_f_result->fetch_assoc()) {
-                        echo '<li><a href="#cat-' . md5($cf['category']) . '">' . htmlspecialchars($cf['category']) . '</a></li>';
-                    }
-                }
-                $conn_f->close();
-                ?>
-            </ul>
-        </div>
-
-        <!-- 2. زر تغيير لون الموقع -->
-        <div class="footer-section">
-            <h3>تغيير لون الموقع</h3>
-            <p style="font-size: 13px; color: #ddd; margin-bottom: 8px;">اختر اللون المفضل:</p>
-            <div class="color-options">
-                <span class="color-circle" style="background-color: #2c3e50;" onclick="changeTheme('#2c3e50', '#3498db')" title="كلاسيكي داكن"></span>
-                <span class="color-circle" style="background-color: #8e44ad;" onclick="changeTheme('#8e44ad', '#9b59b6')" title="بنفسجي"></span>
-                <span class="color-circle" style="background-color: #d35400;" onclick="changeTheme('#d35400', '#e67e22')" title="برتقالي"></span>
-                <span class="color-circle" style="background-color: #16a085;" onclick="changeTheme('#16a085', '#1abc9c')" title="تركواز"></span>
-            </div>
-        </div>
-
-        <!-- 3. About الموقع -->
-        <div class="footer-section">
-            <h3>عن سوبرماركت الساحة</h3>
-            <p style="font-size: 14px; color: #ddd; line-height: 1.6;">
-                نقدم أفضل المنتجات الغذائية والاستهلاكية الطازجة بأفضل الأسعار لتلبية احتياجات عائلتك اليومية بكل سرعة وسهولة.
-            </p>
-        </div>
-
-        <!-- 4. التواصل معنا -->
-        <div class="footer-section">
-            <h3>التواصل معنا</h3>
-            <p style="font-size: 14px; color: #ddd; line-height: 1.8;">
-                📞 الهاتف / واتساب: <br>
-                <a href="https://wa.me/96181058043" target="_blank" style="color: #2ecc71; font-weight: bold; font-size: 16px;">+961 81 058 043</a>
-            </p>
-        </div>
-    </div>
-    <div class="footer-bottom">
-        جميع الحقوق محفوظة &copy; سوبرماركت الساحة 2026
-    </div>
-</footer>
 
 <!-- نافذة سلة المشتريات المنبثقة -->
 <div id="cartModal" class="modal">
