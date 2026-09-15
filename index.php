@@ -1,9 +1,13 @@
 <?php
+// إظهار الأخطاء لاكتشاف أي مشكلة فوراً بدلاً من الشاشة البيضاء
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 // اتصال بقاعدة البيانات
 $host = "localhost";
 $user = "root";
 $pass = "";
-$dbname = "supermarket_alsaaha"; // اسم قاعدة البيانات الخاصة بك
+$dbname = "supermarket_alsaaha"; // تأكد أن هذا الاسم مطابق تماماً لقاعدة البيانات لديك
 
 $conn = new mysqli($host, $user, $pass, $dbname);
 if ($conn->connect_error) {
@@ -294,7 +298,7 @@ $categories_result = $conn->query($categories_sql);
                     echo '<div class="product-title">' . htmlspecialchars($product['name']) . '</div>';
                     echo '<div class="product-price">' . htmlspecialchars($product['price']) . ' ليرة</div>';
                     echo '</div>';
-                    echo '<button class="btn" onclick="addToCart(\'' . htmlspecialchars($product['name']) . '\', ' . $product['price'] . ')">إضافة إلى السلة</button>';
+                    echo '<button class="btn" onclick="addToCart(\'' . htmlspecialchars($product['name'], ENT_QUOTES) . '\', ' . $product['price'] . ')">إضافة إلى السلة</button>';
                     echo '</div>';
                 }
             }
@@ -304,7 +308,7 @@ $categories_result = $conn->query($categories_sql);
             echo '</div>'; 
         }
     } else {
-        echo '<p style="text-align:center; margin-top:50px;">لا توجد تصنيفات أو منتجات متوفرة حالياً.</p>';
+        echo '<p style="text-align:center; margin-top:50px;">لا توجد تصنيفات أو منتجات متوفرة حالياً في قاعدة البيانات.</p>';
     }
     $conn->close();
     ?>
@@ -436,7 +440,7 @@ function sendToWhatsApp() {
 
     message += `\nالمجموع الكلي: ${totalPrice} ليرة`;
 
-    // استביدل الرقم أدناه برقم الواتساب الخاص بك مع رمز الدولة (مثال: 9639xxxxxxxx)
+    // استبدل الرقم أدناه برقم الواتساب الخاص بك مع رمز الدولة (مثال: 9639xxxxxxxx)
     let phoneNumber = "963000000000"; 
     let encodedMessage = encodeURIComponent(message);
     
