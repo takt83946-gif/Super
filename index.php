@@ -1,325 +1,455 @@
 <?php
-require_once 'config.php';
+// اتصال بقاعدة البيانات
+$host = "localhost";
+$user = "root";
+$pass = "";
+$dbname = "supermarket_alsaaha"; // اسم قاعدة البيانات الخاصة بك
 
-// جلب المنتجات والأقسام
-try {
-    $products = $conn->query("SELECT * FROM products ORDER BY id DESC")->fetchAll(PDO::FETCH_ASSOC);
-    $categories = $conn->query("SELECT DISTINCT category FROM products WHERE category != ''")->fetchAll(PDO::FETCH_COLUMN);
-} catch(PDOException $e) {
-    $products = [];
-    $categories = [];
+$conn = new mysqli($host, $user, $pass, $dbname);
+if ($conn->connect_error) {
+    die("فشل الاتصال بقاعدة البيانات: " . $conn->connect_error);
 }
+$conn->set_charset("utf8");
+
+// جلب التصنيفات الموجودة أولاً
+$categories_sql = "SELECT DISTINCT category FROM products WHERE category IS NOT NULL AND category != ''";
+$categories_result = $conn->query($categories_sql);
 ?>
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Alind Store</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/rtl.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <title>سوبرماركت الساحة</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
+        * {
+            box-sizing: border-box;
+        }
         body {
             font-family: 'Cairo', sans-serif;
-            background-color: #f8f9fa;
-            color: #111;
-            padding-bottom: 75px; /* مساحة للشريط السفلي للجوال */
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 0;
+            direction: rtl;
+            text-align: right;
         }
-        .main-header {
-            background: #ffffff;
-            border-bottom: 1px solid #e5e7eb;
+        header {
+            background-color: #2c3e50;
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
             position: sticky;
             top: 0;
-            z-index: 1020;
+            z-index: 999;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
-        .logo-text {
-            font-weight: 900;
-            font-size: 1.4rem;
-            color: #000;
-            text-decoration: none;
+        header h1 {
+            margin: 0;
+            font-size: 22px;
         }
-        .logo-text span {
-            color: #4f46e5;
+        .search-box {
+            flex: 1;
+            max-width: 400px;
+            margin: 0 20px;
         }
-        .search-container {
-            background: #f1f5f9;
-            border-radius: 10px;
-            padding: 8px 15px;
-            border: 1px solid #e2e8f0;
-        }
-        .search-container input {
-            border: none;
-            background: transparent;
-            outline: none;
+        .search-box input {
             width: 100%;
-            font-size: 0.9rem;
+            padding: 8px 15px;
+            border-radius: 20px;
+            border: none;
+            font-family: 'Cairo', sans-serif;
+            outline: none;
+        }
+        .cart-icon-btn {
+            background-color: #27ae60;
+            color: white;
+            border: none;
+            padding: 8px 18px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-family: 'Cairo', sans-serif;
+            font-size: 15px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: background 0.3s;
+        }
+        .cart-icon-btn:hover {
+            background-color: #219653;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 0 15px;
+        }
+        .category-section {
+            margin-bottom: 35px;
+        }
+        .category-title {
+            font-size: 20px;
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 5px;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 20px;
         }
         .product-card {
-            background: #fff;
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            overflow: hidden;
-            transition: all 0.2s ease;
-            height: 100%;
-        }
-        .product-card:hover {
-            box-shadow: 0 10px 20px rgba(0,0,0,0.05);
-            transform: translateY(-3px);
-        }
-        .product-img-box {
-            height: 160px;
-            background: #f8fafc;
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-        }
-        .product-img-box img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        .wish-btn {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background: #fff;
-            border: none;
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            color: #64748b;
-        }
-        .product-title {
-            font-size: 0.95rem;
-            font-weight: 700;
-            color: #1e293b;
-            margin-bottom: 4px;
-        }
-        .product-price {
-            font-size: 1.1rem;
-            font-weight: 800;
-            color: #059669;
-            margin-bottom: 10px;
-        }
-        .btn-order {
-            background: #0f172a;
-            color: #fff;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 0.85rem;
-            padding: 8px;
-            width: 100%;
-            border: none;
-            transition: background 0.2s;
-            text-decoration: none;
-            display: block;
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
             text-align: center;
-        }
-        .btn-order:hover {
-            background: #25d366; /* يتحول لأخضر الواتساب عند اللمس */
-            color: #fff;
-        }
-        /* القائمة الجانبية */
-        .offcanvas-header-custom {
-            background: #0f172a;
-            color: #fff;
-        }
-        .menu-link {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 14px 20px;
-            color: #334155;
-            text-decoration: none;
-            border-bottom: 1px solid #f1f5f9;
-            font-weight: 600;
-        }
-        .menu-link:hover {
-            background: #f8fafc;
-            color: #4f46e5;
-        }
-        /* شريط التنقل السفلي الثابت */
-        .bottom-nav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: #ffffff;
-            border-top: 1px solid #e2e8f0;
-            display: flex;
-            justify-content: space-around;
-            padding: 8px 0;
-            z-index: 1030;
-            box-shadow: 0 -2px 10px rgba(0,0,0,0.03);
-        }
-        .bottom-nav-item {
-            color: #64748b;
-            text-decoration: none;
-            text-align: center;
-            font-size: 0.7rem;
-            font-weight: 600;
             display: flex;
             flex-direction: column;
+            justify-content: space-between;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .product-card img {
+            width: 100%;
+            height: 130px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+        .product-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin: 10px 0 5px;
+            color: #333;
+        }
+        .product-price {
+            color: #27ae60;
+            font-size: 15px;
+            font-weight: bold;
+            margin-bottom: 12px;
+        }
+        .btn {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: 'Cairo', sans-serif;
+            width: 100%;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+        .btn:hover {
+            background-color: #2980b9;
+        }
+        
+        /* تصميم نافذة سلة المشتريات المنبثقة */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            backdrop-filter: blur(3px);
+        }
+        .modal-content {
+            background-color: white;
+            margin: 8% auto;
+            padding: 20px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            position: relative;
+        }
+        .close-btn {
+            color: #aaa;
+            float: left;
+            font-size: 26px;
+            font-weight: bold;
+            cursor: pointer;
+            line-height: 20px;
+        }
+        .close-btn:hover {
+            color: black;
+        }
+        .cart-items-list {
+            list-style: none;
+            padding: 0;
+            margin: 15px 0;
+            max-height: 280px;
+            overflow-y: auto;
+        }
+        .cart-item {
+            display: flex;
+            justify-content: space-between;
             align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #f1f1f1;
+            font-size: 14px;
         }
-        .bottom-nav-item i {
-            font-size: 1.2rem;
-            margin-bottom: 2px;
+        .cart-item-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
-        .bottom-nav-item.active, .bottom-nav-item:hover {
-            color: #4f46e5;
+        .cart-item-controls button {
+            background: #e0e0e0;
+            border: none;
+            width: 25px;
+            height: 25px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .cart-item-controls button:hover {
+            background: #d0d0d0;
+        }
+        .remove-item-btn {
+            background: #e74c3c !important;
+            color: white;
+            font-size: 12px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+        }
+        .whatsapp-checkout-btn {
+            background-color: #25d366;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            width: 100%;
+            font-family: 'Cairo', sans-serif;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: background 0.3s;
+        }
+        .whatsapp-checkout-btn:hover {
+            background-color: #1ebe5d;
+        }
+        .total-price {
+            font-weight: bold;
+            font-size: 17px;
+            margin: 15px 0;
+            text-align: left;
+            color: #2c3e50;
+        }
+        .no-results {
+            text-align: center;
+            color: #777;
+            margin: 40px 0;
+            display: none;
         }
     </style>
 </head>
 <body>
 
-    <header class="main-header py-2">
-        <div class="container d-flex align-items-center justify-content-between">
-            <button class="btn border-0 p-0 fs-4 text-dark" type="button" data-bs-toggle="offcanvas" data-bs-target="#menuSidebar">
-                <i class="fa-solid fa-bars"></i>
-            </button>
-
-            <a href="index.php" class="logo-text">
-                Alind<span>Store</span>
-            </a>
-
-            <div class="d-flex align-items-center gap-3">
-                <a href="admin.php" class="text-dark fs-5"><i class="fa-solid fa-gauge"></i></a>
-            </div>
-        </div>
-    </header>
-
-    <div class="container mt-3">
-        <div class="search-container d-flex align-items-center">
-            <i class="fa-solid fa-magnifying-glass text-muted me-2"></i>
-            <input type="text" id="searchInput" placeholder="ابحث عن المنتجات...">
-        </div>
+<header>
+    <h1>🛒 سوبرماركت الساحة</h1>
+    <div class="search-box">
+        <input type="text" id="searchInput" placeholder="ابحث عن أي منتج..." onkeyup="filterProducts()">
     </div>
+    <button class="cart-icon-btn" onclick="toggleCartModal()">
+        السلة (<span id="cart-count">0</span>)
+    </button>
+</header>
 
-    <div class="container my-4">
-        <h4 class="fw-bold mb-3" id="pageTitle">أحدث المنتجات</h4>
+<div class="container">
+    <?php
+    if ($categories_result && $categories_result->num_rows > 0) {
+        while ($cat_row = $categories_result->fetch_assoc()) {
+            $current_category = $cat_row['category'];
+            echo '<div class="category-section" data-category="' . htmlspecialchars($current_category) . '">';
+            echo '<div class="category-title">' . htmlspecialchars($current_category) . '</div>';
+            echo '<div class="products-grid">';
 
-        <div class="row g-3" id="productsGrid">
-            <?php if (count($products) > 0): ?>
-                <?php foreach ($products as $row): ?>
-                    <?php 
-                        $whatsappMessage = "مرحباً Alind Store، أود طلب المنتج: *{$row['name']}* بسعر: {$row['price']} {$row['currency']}";
-                        $whatsappUrl = "https://wa.me/96181058043?text=" . urlencode($whatsappMessage);
-                    ?>
-                    <div class="col-6 col-md-4 col-lg-3 product-item" data-name="<?= htmlspecialchars($row['name']); ?>" data-category="<?= htmlspecialchars($row['category']); ?>">
-                        <div class="product-card d-flex flex-column p-2">
-                            <div class="product-img-box rounded">
-                                <?php if (!empty($row['image']) && file_exists($row['image'])): ?>
-                                    <img src="<?= $row['image']; ?>" alt="product">
-                                <?php else: ?>
-                                    <i class="fa-solid fa-box fa-2x text-muted opacity-25"></i>
-                                <?php endif; ?>
-                                <button class="wish-btn" onclick="alert('تمت الإضافة للمفضلة')"><i class="fa-regular fa-heart"></i></button>
-                            </div>
+            $stmt = $conn->prepare("SELECT * FROM products WHERE category = ?");
+            $stmt->bind_param("s", $current_category);
+            $stmt->execute();
+            $products_result = $stmt->get_result();
 
-                            <div class="card-body p-2 d-flex flex-column flex-grow-1">
-                                <span class="text-muted" style="font-size: 11px;"><?= htmlspecialchars($row['category']); ?></span>
-                                <h6 class="product-title text-truncate"><?= htmlspecialchars($row['name']); ?></h6>
-                                <div class="product-price mt-auto"><?= $row['price'] . ' ' . $row['currency']; ?></div>
-                                
-                                <a href="<?= $whatsappUrl; ?>" target="_blank" class="btn-order">
-                                    <i class="fa-brands fa-whatsapp"></i> اطلب الآن
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                <?php endforeach; ?>
-            <?php else: ?>
-                <div class="col-12 text-center py-5">
-                    <p class="text-muted">لا توجد منتجات مضافة حالياً. قم بإضافتها من <a href="admin.php">لوحة التحكم</a>.</p>
+            if ($products_result && $products_result->num_rows > 0) {
+                while($product = $products_result->fetch_assoc()) {
+                    $imgSrc = !empty($product['image']) ? htmlspecialchars($product['image']) : 'https://via.placeholder.com/150';
+                    echo '<div class="product-card" data-name="' . htmlspecialchars($product['name']) . '">';
+                    echo '<img src="' . $imgSrc . '" alt="' . htmlspecialchars($product['name']) . '">';
+                    echo '<div>';
+                    echo '<div class="product-title">' . htmlspecialchars($product['name']) . '</div>';
+                    echo '<div class="product-price">' . htmlspecialchars($product['price']) . ' ليرة</div>';
+                    echo '</div>';
+                    echo '<button class="btn" onclick="addToCart(\'' . htmlspecialchars($product['name']) . '\', ' . $product['price'] . ')">إضافة إلى السلة</button>';
+                    echo '</div>';
+                }
+            }
+            $stmt->close();
+
+            echo '</div>'; 
+            echo '</div>'; 
+        }
+    } else {
+        echo '<p style="text-align:center; margin-top:50px;">لا توجد تصنيفات أو منتجات متوفرة حالياً.</p>';
+    }
+    $conn->close();
+    ?>
+    <div id="noResults" class="no-results">عذراً، لم يتم العثور على منتج بهذا الاسم.</div>
+</div>
+
+<!-- نافذة سلة المشتريات المنبثقة -->
+<div id="cartModal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn" onclick="toggleCartModal()">&times;</span>
+        <h2 style="margin-top:0; font-size:20px;">سلة المشتريات</h2>
+        <ul id="cart-items" class="cart-items-list">
+            <p style="text-align:center; color:#777;">السلة فارغة حالياً.</p>
+        </ul>
+        <div class="total-price">المجموع الكلي: <span id="cart-total">0</span> ليرة</div>
+        <button class="whatsapp-checkout-btn" onclick="sendToWhatsApp()">إرسال الطلب عبر واتساب 📱</button>
+    </div>
+</div>
+
+<script>
+let cart = [];
+
+function addToCart(name, price) {
+    let existingItem = cart.find(item => item.name === name);
+    if (existingItem) {
+        existingItem.quantity += 1;
+    } else {
+        cart.push({ name: name, price: price, quantity: 1 });
+    }
+    updateCartUI();
+}
+
+function updateCartUI() {
+    let cartCount = document.getElementById('cart-count');
+    let cartItemsList = document.getElementById('cart-items');
+    let cartTotal = document.getElementById('cart-total');
+
+    let totalCount = 0;
+    let totalPrice = 0;
+    cartItemsList.innerHTML = '';
+
+    if (cart.length === 0) {
+        cartItemsList.innerHTML = '<p style="text-align:center; color:#777;">السلة فارغة حالياً.</p>';
+    } else {
+        cart.forEach((item, index) => {
+            totalCount += item.quantity;
+            totalPrice += item.price * item.quantity;
+
+            let li = document.createElement('li');
+            li.className = 'cart-item';
+            li.innerHTML = `
+                <div>
+                    <strong>${item.name}</strong><br>
+                    <span style="color:#27ae60; font-size:13px;">${item.price} ليرة</span>
                 </div>
-            <?php endif; ?>
-        </div>
-    </div>
+                <div class="cart-item-controls">
+                    <button onclick="changeQuantity(${index}, -1)">-</button>
+                    <span>${item.quantity}</span>
+                    <button onclick="changeQuantity(${index}, 1)">+</button>
+                    <button class="remove-item-btn" onclick="removeFromCart(${index})">حذف</button>
+                </div>
+            `;
+            cartItemsList.appendChild(li);
+        });
+    }
 
-    <div class="offcanvas offcanvas-start" tabindex="-1" id="menuSidebar">
-        <div class="offcanvas-header offcanvas-header-custom">
-            <h5 class="offcanvas-title fw-bold"><i class="fa-solid fa-bars me-2"></i> القائمة</h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
-        </div>
-        <div class="offcanvas-body p-0">
-            <a href="index.php" class="menu-link">
-                <span><i class="fa-solid fa-house me-2 text-primary"></i> الرئيسية</span>
-                <i class="fa-solid fa-chevron-left text-muted small"></i>
-            </a>
-            <a href="admin.php" class="menu-link">
-                <span><i class="fa-solid fa-gauge me-2 text-warning"></i> لوحة التحكم والإدارة</span>
-                <i class="fa-solid fa-chevron-left text-muted small"></i>
-            </a>
-            <hr class="my-2 text-muted">
-            <div class="px-3 py-2 text-muted fw-bold" style="font-size: 0.85rem;">الأقسام المتوفرة:</div>
-            <?php if (!empty($categories)): ?>
-                <?php foreach($categories as $cat): ?>
-                    <a href="#" class="menu-link category-filter" data-category="<?= htmlspecialchars($cat); ?>" data-bs-dismiss="offcanvas">
-                        <span><i class="fa-solid fa-tag me-2 text-secondary"></i> <?= htmlspecialchars($cat); ?></span>
-                        <i class="fa-solid fa-chevron-left text-muted small"></i>
-                    </a>
-                <?php endforeach; ?>
-            <?php else: ?>
-                <div class="px-3 text-muted small">لا توجد أقسام حالياً</div>
-            <?php endif; ?>
-        </div>
-    </div>
+    cartCount.innerText = totalCount;
+    cartTotal.innerText = totalPrice;
+}
 
-    <nav class="bottom-nav">
-        <a href="index.php" class="bottom-nav-item active">
-            <i class="fa-solid fa-house"></i>
-            <span>الرئيسية</span>
-        </a>
-        <a href="#" class="bottom-nav-item" onclick="alert('المفضلة فارغة'); return false;">
-            <i class="fa-regular fa-heart"></i>
-            <span>المفضلة</span>
-        </a>
-        <a href="admin.php" class="bottom-nav-item">
-            <i class="fa-regular fa-user"></i>
-            <span>الإدارة</span>
-        </a>
-        <a href="https://wa.me/96181058043" target="_blank" class="bottom-nav-item">
-            <i class="fa-regular fa-comment-dots"></i>
-            <span>الدعم</span>
-        </a>
-        <a href="index.php" class="bottom-nav-item">
-            <i class="fa-solid fa-bag-shopping"></i>
-            <span>المتجر</span>
-        </a>
-    </nav>
+function changeQuantity(index, amount) {
+    cart[index].quantity += amount;
+    if (cart[index].quantity <= 0) {
+        cart.splice(index, 1);
+    }
+    updateCartUI();
+}
 
-    <script>
-        document.getElementById('searchInput').addEventListener('keyup', function() {
-            let filter = this.value.toLowerCase();
-            let items = document.querySelectorAll('.product-item');
-            items.forEach(function(item) {
-                let name = item.getAttribute('data-name').toLowerCase();
-                item.style.display = name.includes(filter) ? "" : "none";
-            });
+function removeFromCart(index) {
+    cart.splice(index, 1);
+    updateCartUI();
+}
+
+function toggleCartModal() {
+    let modal = document.getElementById('cartModal');
+    modal.style.display = modal.style.display === 'block' ? 'none' : 'block';
+}
+
+function filterProducts() {
+    let input = document.getElementById('searchInput').value.toLowerCase();
+    let sections = document.querySelectorAll('.category-section');
+    let hasVisibleProducts = false;
+
+    sections.forEach(section => {
+        let products = section.querySelectorAll('.product-card');
+        let sectionVisible = false;
+
+        products.forEach(product => {
+            let name = product.getAttribute('data-name').toLowerCase();
+            if (name.includes(input)) {
+                product.style.display = 'flex';
+                sectionVisible = true;
+                hasVisibleProducts = true;
+            } else {
+                product.style.display = 'none';
+            }
         });
 
-        document.querySelectorAll('.category-filter').forEach(function(link) {
-            link.addEventListener('click', function(e) {
-                e.preventDefault();
-                let selectedCat = this.getAttribute('data-category');
-                document.getElementById('pageTitle').innerText = "قسم: " + selectedCat;
-                let items = document.querySelectorAll('.product-item');
-                items.forEach(function(item) {
-                    let cat = item.getAttribute('data-category');
-                    item.style.display = (cat === selectedCat) ? "" : "none";
-                });
-            });
-        });
-    </script>
+        section.style.display = sectionVisible ? 'block' : 'none';
+    });
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    document.getElementById('noResults').style.display = hasVisibleProducts ? 'none' : 'block';
+}
+
+function sendToWhatsApp() {
+    if (cart.length === 0) {
+        alert("السلة فارغة! قم بإضافة منتجات أولاً.");
+        return;
+    }
+
+    let message = "مرحباً، أريد طلب المنتجات التالية من سوبرماركت الساحة:\n\n";
+    let totalPrice = 0;
+
+    cart.forEach(item => {
+        let itemTotal = item.price * item.quantity;
+        message += `- ${item.name} (الكمية: ${item.quantity}) - السعر: ${itemTotal} ليرة\n`;
+        totalPrice += itemTotal;
+    });
+
+    message += `\nالمجموع الكلي: ${totalPrice} ليرة`;
+
+    // استביدل الرقم أدناه برقم الواتساب الخاص بك مع رمز الدولة (مثال: 9639xxxxxxxx)
+    let phoneNumber = "963000000000"; 
+    let encodedMessage = encodeURIComponent(message);
+    
+    window.open(`https://wa.me/${phoneNumber}?text=${encodedMessage}`, '_blank');
+}
+
+window.onclick = function(event) {
+    let modal = document.getElementById('cartModal');
+    if (event.target === modal) {
+        modal.style.display = 'none';
+    }
+}
+</script>
+
 </body>
 </html>
