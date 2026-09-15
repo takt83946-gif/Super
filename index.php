@@ -71,7 +71,7 @@ $categories_result = $conn->query($categories_sql);
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
-            transition: background-color 0.3s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
         header h1 {
             margin: 0;
@@ -146,13 +146,13 @@ $categories_result = $conn->query($categories_sql);
             background-color: var(--btn-cart);
             color: white;
             border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
+            padding: 8px 16px;
+            border-radius: 6px;
             cursor: pointer;
             font-family: 'Cairo', sans-serif;
-            font-size: 16px;
+            font-size: 15px;
             font-weight: bold;
-            transition: background-color 0.3s;
+            transition: opacity 0.2s;
         }
         .cart-icon-btn:hover {
             opacity: 0.9;
@@ -174,6 +174,7 @@ $categories_result = $conn->query($categories_sql);
             outline: none;
             transition: border-color 0.3s;
             box-sizing: border-box;
+            background: white;
         }
         .search-input:focus {
             border-color: var(--accent-color);
@@ -195,6 +196,7 @@ $categories_result = $conn->query($categories_sql);
             border-bottom: 2px solid var(--accent-color);
             padding-bottom: 5px;
             margin-bottom: 20px;
+            font-weight: 700;
         }
         .products-grid {
             display: grid;
@@ -203,32 +205,34 @@ $categories_result = $conn->query($categories_sql);
         }
         .product-card {
             background: white;
-            border-radius: 8px;
+            border-radius: 10px;
             padding: 15px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
             text-align: center;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            transition: transform 0.2s;
+            transition: transform 0.2s, box-shadow 0.2s;
         }
         .product-card:hover {
-            transform: translateY(-3px);
+            transform: translateY(-4px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
         .product-card img {
-            max-width: 100%;
+            width: 100%;
             height: 140px;
             object-fit: cover;
-            border-radius: 5px;
+            border-radius: 6px;
         }
         .product-title {
             font-size: 17px;
             font-weight: 600;
             margin: 10px 0 5px;
+            color: #333;
         }
         .product-price {
             color: #27ae60;
-            font-size: 15px;
+            font-size: 16px;
             font-weight: bold;
             margin-bottom: 12px;
         }
@@ -236,13 +240,13 @@ $categories_result = $conn->query($categories_sql);
             background-color: var(--accent-color);
             color: white;
             border: none;
-            padding: 8px 15px;
-            border-radius: 5px;
+            padding: 9px 15px;
+            border-radius: 6px;
             cursor: pointer;
             font-family: 'Cairo', sans-serif;
             width: 100%;
             font-weight: 600;
-            transition: background-color 0.3s;
+            transition: opacity 0.2s;
         }
         .btn:hover {
             opacity: 0.9;
@@ -252,21 +256,24 @@ $categories_result = $conn->query($categories_sql);
         .modal {
             display: none;
             position: fixed;
-            z-index: 1000;
+            z-index: 2000;
             left: 0;
             top: 0;
             width: 100%;
             height: 100%;
             background-color: rgba(0,0,0,0.5);
+            animation: fadeIn 0.3s;
         }
+        @keyframes fadeIn { from {opacity: 0;} to {opacity: 1;} }
+
         .modal-content {
             background-color: white;
-            margin: 6% auto;
+            margin: 5% auto;
             padding: 20px;
-            border-radius: 8px;
+            border-radius: 12px;
             width: 90%;
-            max-width: 500px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            max-width: 480px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
             position: relative;
             max-height: 85vh;
             overflow-y: auto;
@@ -274,37 +281,99 @@ $categories_result = $conn->query($categories_sql);
         .close-btn {
             color: #aaa;
             float: left;
-            font-size: 28px;
+            font-size: 26px;
             font-weight: bold;
             cursor: pointer;
+            line-height: 20px;
         }
         .close-btn:hover {
             color: black;
         }
+
+        /* تنسيق عناصر السلة وأزرار التحكم بالكمية */
         .cart-items-list {
             list-style: none;
             padding: 0;
             margin: 15px 0;
-            max-height: 180px;
+            max-height: 220px;
             overflow-y: auto;
         }
         .cart-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 8px 0;
-            border-bottom: 1px solid #eee;
+            padding: 10px 0;
+            border-bottom: 1px solid #f1f1f1;
+            gap: 10px;
+        }
+        .cart-item-info {
+            flex: 1;
+        }
+        .cart-item-name {
+            font-weight: 600;
+            font-size: 14px;
+            color: #333;
+        }
+        .cart-item-price {
+            color: #27ae60;
+            font-size: 13px;
+            font-weight: bold;
+        }
+        .quantity-controls {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            background: #f1f2f6;
+            padding: 2px 6px;
+            border-radius: 6px;
+        }
+        .qty-btn {
+            background-color: white;
+            color: #333;
+            border: 1px solid #ddd;
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-family: 'Cairo', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+        .qty-btn:hover {
+            background-color: var(--accent-color);
+            color: white;
+            border-color: var(--accent-color);
+        }
+        .qty-val {
+            font-weight: bold;
+            min-width: 20px;
+            text-align: center;
+            font-size: 14px;
+        }
+        .remove-item-btn {
+            background: none;
+            border: none;
+            color: #e74c3c;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 4px;
+        }
+        .remove-item-btn:hover {
+            opacity: 0.8;
         }
         
         /* نموذج بيانات الزبون */
         .customer-form {
             margin-top: 15px;
-            border-top: 2px solid #eee;
+            border-top: 2px solid #f1f1f1;
             padding-top: 15px;
         }
         .customer-form h3 {
             margin-bottom: 10px;
-            font-size: 17px;
+            font-size: 16px;
             color: var(--primary-color);
         }
         .form-group {
@@ -314,16 +383,18 @@ $categories_result = $conn->query($categories_sql);
             display: block;
             font-size: 13px;
             font-weight: 600;
-            margin-bottom: 5px;
+            margin-bottom: 4px;
+            color: #555;
         }
         .form-group input, .form-group textarea {
             width: 100%;
             padding: 9px;
             border: 1px solid #ddd;
-            border-radius: 5px;
+            border-radius: 6px;
             font-family: 'Cairo', sans-serif;
             box-sizing: border-box;
             outline: none;
+            font-size: 14px;
         }
         .form-group input:focus, .form-group textarea:focus {
             border-color: var(--accent-color);
@@ -333,58 +404,85 @@ $categories_result = $conn->query($categories_sql);
             background-color: #25d366;
             color: white;
             border: none;
-            padding: 10px;
-            border-radius: 5px;
+            padding: 11px;
+            border-radius: 6px;
             width: 100%;
             font-family: 'Cairo', sans-serif;
             font-size: 16px;
             font-weight: bold;
             cursor: pointer;
             margin-top: 10px;
+            transition: background-color 0.2s;
         }
         .whatsapp-checkout-btn:hover {
             background-color: #1ebe5d;
         }
-        .clear-cart-btn {
-            background-color: #e74c3c;
+        
+        .save-invoice-btn {
+            background-color: #3498db;
             color: white;
             border: none;
-            padding: 6px 12px;
+            padding: 9px;
+            border-radius: 6px;
+            width: 100%;
+            font-family: 'Cairo', sans-serif;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: opacity 0.2s;
+        }
+        .save-invoice-btn:hover {
+            opacity: 0.9;
+        }
+
+        .clear-cart-btn {
+            background-color: #ffeaa7;
+            color: #d35400;
+            border: none;
+            padding: 6px 10px;
             border-radius: 4px;
             cursor: pointer;
             font-family: 'Cairo', sans-serif;
-            font-size: 13px;
-            margin-top: 5px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .clear-cart-btn:hover {
+            background-color: #fdcb6e;
         }
         .total-price {
             font-weight: bold;
-            font-size: 18px;
-            margin: 15px 0;
-            text-align: left;
+            font-size: 17px;
+            color: #2c3e50;
         }
 
         /* رسالة التنبيه المنبثقة المؤقتة (Toast) */
         #toast {
             visibility: hidden;
-            min-width: 250px;
-            background-color: #333;
+            min-width: 220px;
+            background-color: #222;
             color: #fff;
             text-align: center;
-            border-radius: 5px;
+            border-radius: 6px;
             padding: 12px;
             position: fixed;
-            z-index: 2000;
+            z-index: 3000;
             left: 50%;
             bottom: 30px;
             transform: translateX(-50%);
-            font-size: 15px;
+            font-size: 14px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
         }
         #toast.show {
             visibility: visible;
-            animation: fadein 0.5s, fadeout 0.5s 2s;
+            animation: fadeInOut 2.5s ease;
         }
-        @keyframes fadein {from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;}}
-        @keyframes fadeout {from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;}}
+        @keyframes fadeInOut {
+            0% { opacity: 0; bottom: 10px; }
+            15% { opacity: 1; bottom: 30px; }
+            85% { opacity: 1; bottom: 30px; }
+            100% { opacity: 0; bottom: 40px; }
+        }
 
         /* زر العودة للأعلى */
         #scrollTopBtn {
@@ -397,13 +495,12 @@ $categories_result = $conn->query($categories_sql);
             background-color: var(--primary-color);
             color: white;
             border: none;
-            outline: none;
-            width: 45px;
-            height: 45px;
+            width: 42px;
+            height: 42px;
             border-radius: 50%;
             cursor: pointer;
             box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-            transition: background-color 0.3s;
+            transition: background-color 0.2s;
         }
         #scrollTopBtn:hover {
             background-color: var(--accent-color);
@@ -424,7 +521,7 @@ $categories_result = $conn->query($categories_sql);
 <!-- الهيدر -->
 <header>
     <h1>Ali And Store</h1>
-    <button class="cart-icon-btn" onclick="toggleCartModal()">🛒 سلة المشتريات (<span id="cart-count">0</span>)</button>
+    <button class="cart-icon-btn" onclick="toggleCartModal()">🛒 السلة (<span id="cart-count">0</span>)</button>
 </header>
 
 <!-- شريط التنقل العلوي -->
@@ -449,9 +546,10 @@ $categories_result = $conn->query($categories_sql);
         </div>
     </div>
 
-    <button class="top-nav-item" onclick="showToast('Ali And Store: متجرك المفضل لتلبية احتياجاتك بأفضل الأسعار.');">
-        <span class="icon">ℹ️</span> عن المتجر
-    </button>
+    <!-- زر لوحة التحكم السريع -->
+    <a href="admin.php" class="top-nav-item" style="color: #f1c40f; text-decoration:none;">
+        <span class="icon">⚙️</span> لوحة التحكم
+    </a>
 
     <a href="https://wa.me/96181058043" target="_blank" class="top-nav-item" style="color: #2ecc71; text-decoration:none;">
         <span class="icon">📞</span> التواصل
@@ -511,17 +609,17 @@ $categories_result = $conn->query($categories_sql);
 
 <!-- نافذة المنيو المنبثقة -->
 <div id="menuModal" class="modal">
-    <div class="modal-content" style="max-width: 350px; text-align: center;">
+    <div class="modal-content" style="max-width: 340px; text-align: center;">
         <span class="close-btn" onclick="toggleMenuModal()">&times;</span>
-        <h2>أقسام المنيو</h2>
-        <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">
+        <h2 style="margin-top:0; color:var(--primary-color);">أقسام المتجر</h2>
+        <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 15px;">
             <?php
             $conn_mb = new mysqli($host, $user, $pass, $dbname, (int)$port);
             $conn_mb->set_charset("utf8");
             $cat_mb_result = $conn_mb->query("SELECT DISTINCT category FROM products WHERE category IS NOT NULL AND category != ''");
             if ($cat_mb_result) {
                 while ($cmb = $cat_mb_result->fetch_assoc()) {
-                    echo '<a href="#cat-' . md5($cmb['category']) . '" onclick="toggleMenuModal()" style="background:var(--accent-color); color:white; padding:10px; border-radius:5px; text-decoration:none; font-weight:bold;">' . htmlspecialchars($cmb['category']) . '</a>';
+                    echo '<a href="#cat-' . md5($cmb['category']) . '" onclick="toggleMenuModal()" style="background:var(--accent-color); color:white; padding:10px; border-radius:6px; text-decoration:none; font-weight:bold;">' . htmlspecialchars($cmb['category']) . '</a>';
                 }
             }
             $conn_mb->close();
@@ -534,14 +632,15 @@ $categories_result = $conn->query($categories_sql);
 <div id="cartModal" class="modal">
     <div class="modal-content">
         <span class="close-btn" onclick="toggleCartModal()">&times;</span>
-        <h2>سلة المشتريات</h2>
+        <h2 style="margin-top:0; color:var(--primary-color);">🛒 سلة المشتريات</h2>
         
         <ul id="cart-items" class="cart-items-list">
             <p style="text-align:center; color:#777;">السلة فارغة حالياً.</p>
         </ul>
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <button class="clear-cart-btn" onclick="clearCart()">تفريغ السلة</button>
-            <div class="total-price" style="margin:0;">المجموع: <span id="cart-total">0</span> ليرة</div>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #eee; padding-top: 10px;">
+            <button class="clear-cart-btn" onclick="clearCart()">🗑️ تفريغ السلة</button>
+            <div class="total-price">المجموع: <span id="cart-total">0</span> ليرة</div>
         </div>
 
         <!-- قسم بيانات الزبون (مع الحفظ التلقائي) -->
@@ -562,6 +661,7 @@ $categories_result = $conn->query($categories_sql);
         </div>
 
         <button class="whatsapp-checkout-btn" onclick="sendToWhatsApp()">إرسال الطلب عبر واتساب 📱</button>
+        <button class="save-invoice-btn" onclick="saveInvoice()">📥 حفظ / طباعة الفاتورة</button>
     </div>
 </div>
 
@@ -573,7 +673,7 @@ $categories_result = $conn->query($categories_sql);
    5. قسم البرمجة النصية (JavaScript Logic)
    ========================================================== -->
 <script>
-// استرجاع السلة وبيانات الزبون من LocalStorage لتوفير تجربة ممتازة
+// استرجاع السلة وبيانات الزبون من LocalStorage
 let cart = JSON.parse(localStorage.getItem('ali_store_cart')) || [];
 loadCustomerData();
 updateCartUI();
@@ -582,7 +682,7 @@ function showToast(text) {
     let toast = document.getElementById("toast");
     toast.innerText = text;
     toast.className = "show";
-    setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 2500);
+    setTimeout(() => { toast.className = ""; }, 2500);
 }
 
 function addToCart(name, price) {
@@ -593,7 +693,21 @@ function addToCart(name, price) {
         cart.push({ name: name, price: price, quantity: 1 });
     }
     saveAndupdateCart();
-    showToast("تمت إضافة " + name + " إلى السلة");
+    showToast("تمت إضافة " + name + " إلى السلة ✅");
+}
+
+function increaseQty(index) {
+    cart[index].quantity += 1;
+    saveAndupdateCart();
+}
+
+function decreaseQty(index) {
+    if (cart[index].quantity > 1) {
+        cart[index].quantity -= 1;
+    } else {
+        cart.splice(index, 1);
+    }
+    saveAndupdateCart();
 }
 
 function saveAndupdateCart() {
@@ -611,7 +725,7 @@ function updateCartUI() {
     cartItemsList.innerHTML = '';
 
     if (cart.length === 0) {
-        cartItemsList.innerHTML = '<p style="text-align:center; color:#777;">السلة فارغة حالياً.</p>';
+        cartItemsList.innerHTML = '<p style="text-align:center; color:#777; padding: 20px 0;">السلة فارغة حالياً.</p>';
     } else {
         cart.forEach((item, index) => {
             totalCount += item.quantity;
@@ -620,9 +734,16 @@ function updateCartUI() {
             let li = document.createElement('li');
             li.className = 'cart-item';
             li.innerHTML = `
-                <span>${item.name} (${item.quantity})</span>
-                <span>${item.price * item.quantity} ليرة</span>
-                <button onclick="removeFromCart(${index})" style="background:#e74c3c; color:white; border:none; padding:3px 8px; border-radius:3px; cursor:pointer;">حذف</button>
+                <div class="cart-item-info">
+                    <div class="cart-item-name">${item.name}</div>
+                    <div class="cart-item-price">${item.price * item.quantity} ليرة</div>
+                </div>
+                <div class="quantity-controls">
+                    <button class="qty-btn" onclick="decreaseQty(${index})">-</button>
+                    <span class="qty-val">${item.quantity}</span>
+                    <button class="qty-btn" onclick="increaseQty(${index})">+</button>
+                </div>
+                <button class="remove-item-btn" onclick="removeFromCart(${index})" title="حذف المنتج">❌</button>
             `;
             cartItemsList.appendChild(li);
         });
@@ -644,7 +765,6 @@ function clearCart() {
     }
 }
 
-// حفظ بيانات الزبون تلقائياً في ذاكرة المتصفح
 function saveCustomerData() {
     let customer = {
         name: document.getElementById('custName').value,
@@ -684,7 +804,6 @@ function changeTheme(primary, accent) {
     document.getElementById('colorPopup').style.display = 'none';
 }
 
-// محرك البحث الفوري
 function filterProducts() {
     let input = document.getElementById('searchInput').value.toLowerCase();
     let cards = document.querySelectorAll('.product-card');
@@ -699,7 +818,80 @@ function filterProducts() {
     });
 }
 
-// إرسال الطلب وتفاصيل الزبون عبر الواتساب
+// ميزة حفظ وطباعة الفاتورة
+function saveInvoice() {
+    if (cart.length === 0) {
+        alert("السلة فارغة! لا توجد فاتورة لحفظها.");
+        return;
+    }
+
+    let name = document.getElementById('custName').value.trim() || "غير محدد";
+    let phone = document.getElementById('custPhone').value.trim() || "غير محدد";
+    let address = document.getElementById('custAddress').value.trim() || "غير محدد";
+
+    let invoiceWindow = window.open('', '_blank');
+    let invoiceHtml = `
+        <html lang="ar" dir="rtl">
+        <head>
+            <meta charset="UTF-8">
+            <title>فاتورة شراء - Ali And Store</title>
+            <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+            <style>
+                body { font-family: 'Cairo', sans-serif; padding: 20px; color: #333; }
+                h2 { text-align: center; color: #2c3e50; }
+                .info { margin-bottom: 20px; background: #f8f9fa; padding: 10px; border-radius: 6px; }
+                table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+                th, td { border: 1px solid #ddd; padding: 8px 12px; text-align: right; }
+                th { background-color: #2c3e50; color: white; }
+                .total { text-align: left; font-size: 18px; font-weight: bold; margin-top: 15px; }
+            </style>
+        </head>
+        <body>
+            <h2>Ali And Store - فاتورة الطلب</h2>
+            <div class="info">
+                <p><strong>اسم الزبون:</strong> ${name}</p>
+                <p><strong>رقم الهاتف:</strong> ${phone}</p>
+                <p><strong>العنوان:</strong> ${address}</p>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>المنتج</th>
+                        <th>الكمية</th>
+                        <th>السعر الإجمالي</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+
+    let totalPrice = 0;
+    cart.forEach(item => {
+        let itemTotal = item.price * item.quantity;
+        totalPrice += itemTotal;
+        invoiceHtml += `
+            <tr>
+                <td>${item.name}</td>
+                <td>${item.quantity}</td>
+                <td>${itemTotal} ليرة</td>
+            </tr>
+        `;
+    });
+
+    invoiceHtml += `
+                </tbody>
+            </table>
+            <div class="total">المجموع الكلي: ${totalPrice} ليرة</div>
+            <script>
+                window.onload = function() { window.print(); }
+            <\/script>
+        </body>
+        </html>
+    `;
+
+    invoiceWindow.document.write(invoiceHtml);
+    invoiceWindow.document.close();
+}
+
 function sendToWhatsApp() {
     if (cart.length === 0) {
         alert("السلة فارغة! قم بإضافة منتجات أولاً.");
@@ -736,7 +928,6 @@ function sendToWhatsApp() {
     window.open(`https://wa.me/${phoneNumber}?text=${encodedMessage}`, '_blank');
 }
 
-// زر العودة للأعلى
 window.onscroll = function() {
     let btn = document.getElementById("scrollTopBtn");
     if (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) {
@@ -750,7 +941,6 @@ function scrollToTop() {
     window.scrollTo({top: 0, behavior: 'smooth'});
 }
 
-// إغلاق النوافذ عند النقر خارجها
 window.onclick = function(event) {
     let modal = document.getElementById('cartModal');
     let menuModal = document.getElementById('menuModal');
