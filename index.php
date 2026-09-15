@@ -38,6 +38,7 @@ $categories_result = $conn->query($categories_sql);
             direction: rtl;
             text-align: right;
             transition: background-color 0.3s;
+            padding-bottom: 70px; /* مسافة لكي لا يغطي الشريط السفلي المنتجات الأخيرة */
         }
         header {
             background-color: var(--primary-color);
@@ -54,45 +55,64 @@ $categories_result = $conn->query($categories_sql);
             font-size: 24px;
         }
         
-        /* شريط التنقل العلوي (Navbar) للعناصر الأربعة */
-        .navbar-bar {
-            background-color: #34495e;
+        /* شريط الهاتف السفلي الثابت (Bottom Navigation Bar) */
+        .bottom-nav-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: var(--primary-color);
             color: white;
-            padding: 10px 20px;
             display: flex;
             justify-content: space-around;
             align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            padding: 8px 0;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.15);
+            z-index: 999;
+            transition: background-color 0.3s;
         }
-        .nav-item {
-            font-size: 15px;
+        .bottom-nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 12px;
             font-weight: 600;
-            cursor: pointer;
-            position: relative;
-        }
-        .nav-item a {
             color: white;
+            cursor: pointer;
             text-decoration: none;
-            transition: color 0.2s;
+            flex: 1;
+            text-align: center;
+            background: none;
+            border: none;
+            font-family: 'Cairo', sans-serif;
         }
-        .nav-item a:hover {
-            color: #3498db;
+        .bottom-nav-item span.icon {
+            font-size: 18px;
+            margin-bottom: 2px;
         }
-        .color-picker-container {
-            display: inline-flex;
+        .bottom-nav-item:hover {
+            color: var(--accent-color);
+        }
+
+        /* نافذة اختيار الألوان المنبثقة من الشريط السفلي */
+        .color-popup {
+            display: none;
+            position: absolute;
+            bottom: 60px;
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
             gap: 8px;
             align-items: center;
-            vertical-align: middle;
+            z-index: 1000;
         }
         .color-circle {
-            width: 20px;
-            height: 20px;
+            width: 25px;
+            height: 25px;
             border-radius: 50%;
             cursor: pointer;
-            border: 1px solid white;
-            display: inline-block;
+            border: 2px solid #ddd;
         }
 
         .cart-icon-btn {
@@ -250,49 +270,6 @@ $categories_result = $conn->query($categories_sql);
     <button class="cart-icon-btn" onclick="toggleCartModal()">🛒 سلة المشتريات (<span id="cart-count">0</span>)</button>
 </header>
 
-<!-- شريط البار العلوي (يحتوي العناصر الأربعة) -->
-<div class="navbar-bar">
-    <!-- 1. المنيو -->
-    <div class="nav-item">
-        📋 المنيو: 
-        <select id="menuSelect" onchange="location = this.value;" style="background:#2c3e50; color:white; border:1px solid #ccc; padding:3px; border-radius:4px; font-family:'Cairo';">
-            <option value="">اختر القسم...</option>
-            <?php
-            $conn_m = new mysqli($host, $user, $pass, $dbname, (int)$port);
-            $conn_m->set_charset("utf8");
-            $cat_m_result = $conn_m->query("SELECT DISTINCT category FROM products WHERE category IS NOT NULL AND category != ''");
-            if ($cat_m_result) {
-                while ($cm = $cat_m_result->fetch_assoc()) {
-                    echo '<option value="#cat-' . md5($cm['category']) . '">' . htmlspecialchars($cm['category']) . '</option>';
-                }
-            }
-            $conn_m->close();
-            ?>
-        </select>
-    </div>
-
-    <!-- 2. زر تغيير اللون -->
-    <div class="nav-item">
-        🎨 لون الموقع:
-        <div class="color-picker-container">
-            <span class="color-circle" style="background-color: #2c3e50;" onclick="changeTheme('#2c3e50', '#3498db')" title="كلاسيكي"></span>
-            <span class="color-circle" style="background-color: #8e44ad;" onclick="changeTheme('#8e44ad', '#9b59b6')" title="بنفسجي"></span>
-            <span class="color-circle" style="background-color: #d35400;" onclick="changeTheme('#d35400', '#e67e22')" title="برتقالي"></span>
-            <span class="color-circle" style="background-color: #16a085;" onclick="changeTheme('#16a085', '#1abc9c')" title="تركواز"></span>
-        </div>
-    </div>
-
-    <!-- 3. About الموقع -->
-    <div class="nav-item" onclick="alert('Ali And Store: نقدم أفضل المنتجات الاستهلاكية والغذائية بأفضل الأسعار لتلبية احتياجاتك اليومية.');" style="cursor: pointer;">
-        ℹ️ عن الموقع (About)
-    </div>
-
-    <!-- 4. التواصل معنا -->
-    <div class="nav-item">
-        📞 تواصل معنا: <a href="https://wa.me/96181058043" target="_blank" style="color: #2ecc71; font-weight: bold;">+96181058043</a>
-    </div>
-</div>
-
 <div class="container">
     <?php
     if ($categories_result && $categories_result->num_rows > 0) {
@@ -333,6 +310,63 @@ $categories_result = $conn->query($categories_sql);
     }
     $conn->close();
     ?>
+</div>
+
+<!-- شريط الهاتف السفلي الثابت (Bottom Navigation Bar) -->
+<div class="bottom-nav-bar">
+    <!-- 1. المنيو -->
+    <button class="bottom-nav-item" onclick="toggleMenuModal()">
+        <span class="icon">📋</span>
+        المنيو
+    </button>
+
+    <!-- 2. زر تغيير اللون -->
+    <div style="position: relative; display: flex; flex: 1; justify-content: center;">
+        <button class="bottom-nav-item" onclick="toggleColorPopup()">
+            <span class="icon">🎨</span>
+            الألوان
+        </button>
+        <!-- قائمة الألوان المنبثقة -->
+        <div id="colorPopup" class="color-popup">
+            <span class="color-circle" style="background-color: #2c3e50;" onclick="changeTheme('#2c3e50', '#3498db')" title="كلاسيكي"></span>
+            <span class="color-circle" style="background-color: #8e44ad;" onclick="changeTheme('#8e44ad', '#9b59b6')" title="بنفسجي"></span>
+            <span class="color-circle" style="background-color: #d35400;" onclick="changeTheme('#d35400', '#e67e22')" title="برتقالي"></span>
+            <span class="color-circle" style="background-color: #16a085;" onclick="changeTheme('#16a085', '#1abc9c')" title="تركواز"></span>
+        </div>
+    </div>
+
+    <!-- 3. About الموقع -->
+    <button class="bottom-nav-item" onclick="alert('Ali And Store: متجرك المفضل لتلبية كافة احتياجاتك اليومية بأفضل الأسعار وأسرع خدمة توصيل.');">
+        <span class="icon">ℹ️</span>
+        عن المتجر
+    </button>
+
+    <!-- 4. التواصل معنا -->
+    <a href="https://wa.me/96181058043" target="_blank" class="bottom-nav-item" style="color: #2ecc71;">
+        <span class="icon">📞</span>
+        التواصل
+    </a>
+</div>
+
+<!-- نافذة منبثقة للمنيو (الأقسام) -->
+<div id="menuModal" class="modal">
+    <div class="modal-content" style="max-width: 350px; text-align: center;">
+        <span class="close-btn" onclick="toggleMenuModal()">&times;</span>
+        <h2>أقسام المنيو</h2>
+        <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">
+            <?php
+            $conn_mb = new mysqli($host, $user, $pass, $dbname, (int)$port);
+            $conn_mb->set_charset("utf8");
+            $cat_mb_result = $conn_mb->query("SELECT DISTINCT category FROM products WHERE category IS NOT NULL AND category != ''");
+            if ($cat_mb_result) {
+                while ($cmb = $cat_mb_result->fetch_assoc()) {
+                    echo '<a href="#cat-' . md5($cmb['category']) . '" onclick="toggleMenuModal()" style="background:#3498db; color:white; padding:10px; border-radius:5px; text-decoration:none; font-weight:bold;">' . htmlspecialchars($cmb['category']) . '</a>';
+                }
+            }
+            $conn_mb->close();
+            ?>
+        </div>
+    </div>
 </div>
 
 <!-- نافذة سلة المشتريات المنبثقة -->
@@ -403,9 +437,20 @@ function toggleCartModal() {
     modal.style.display = modal.style.display === 'block' ? 'none' : 'block';
 }
 
+function toggleMenuModal() {
+    let modal = document.getElementById('menuModal');
+    modal.style.display = modal.style.display === 'block' ? 'none' : 'block';
+}
+
+function toggleColorPopup() {
+    let popup = document.getElementById('colorPopup');
+    popup.style.display = popup.style.display === 'flex' ? 'none' : 'flex';
+}
+
 function changeTheme(primary, accent) {
     document.documentElement.style.setProperty('--primary-color', primary);
     document.documentElement.style.setProperty('--accent-color', accent);
+    document.getElementById('colorPopup').style.display = 'none';
 }
 
 function sendToWhatsApp() {
@@ -433,8 +478,12 @@ function sendToWhatsApp() {
 
 window.onclick = function(event) {
     let modal = document.getElementById('cartModal');
+    let menuModal = document.getElementById('menuModal');
     if (event.target === modal) {
         modal.style.display = 'none';
+    }
+    if (event.target === menuModal) {
+        menuModal.style.display = 'none';
     }
 }
 </script>
