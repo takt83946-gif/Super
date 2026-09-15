@@ -39,6 +39,20 @@ $categories_result = $conn->query($categories_sql);
             text-align: right;
             transition: background-color 0.3s;
         }
+        /* شريط الإعلانات المتحرك العلوي */
+        .announcement-bar {
+            background-color: #e74c3c;
+            color: white;
+            padding: 8px 0;
+            font-size: 14px;
+            font-weight: bold;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+        .announcement-bar marquee {
+            width: 100%;
+        }
+
         header {
             background-color: var(--primary-color);
             color: white;
@@ -90,7 +104,7 @@ $categories_result = $conn->query($categories_sql);
             color: var(--accent-color);
         }
 
-        /* قائمة اختيار الألوان المنبثقة من الشريط العلوي (أكثر ألواناً وتنوعاً) */
+        /* قائمة اختيار الألوان المنبثقة */
         .color-popup {
             display: none;
             position: absolute;
@@ -133,6 +147,28 @@ $categories_result = $conn->query($categories_sql);
         .cart-icon-btn:hover {
             opacity: 0.9;
         }
+
+        /* شريط البحث الفوري */
+        .search-container {
+            max-width: 600px;
+            margin: 20px auto 0 auto;
+            padding: 0 15px;
+        }
+        .search-input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-family: 'Cairo', sans-serif;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.3s;
+            box-sizing: border-box;
+        }
+        .search-input:focus {
+            border-color: var(--accent-color);
+        }
+
         .container {
             max-width: 1200px;
             margin: 20px auto;
@@ -163,6 +199,10 @@ $categories_result = $conn->query($categories_sql);
             display: flex;
             flex-direction: column;
             justify-content: space-between;
+            transition: transform 0.2s;
+        }
+        .product-card:hover {
+            transform: translateY(-3px);
         }
         .product-card img {
             max-width: 100%;
@@ -197,7 +237,7 @@ $categories_result = $conn->query($categories_sql);
             opacity: 0.9;
         }
         
-        /* تصميم نافذة سلة المشتريات المنبثقة */
+        /* تصميم النوافذ المنبثقة */
         .modal {
             display: none;
             position: fixed;
@@ -210,13 +250,15 @@ $categories_result = $conn->query($categories_sql);
         }
         .modal-content {
             background-color: white;
-            margin: 10% auto;
+            margin: 8% auto;
             padding: 20px;
             border-radius: 8px;
             width: 90%;
             max-width: 500px;
             box-shadow: 0 4px 8px rgba(0,0,0,0.2);
             position: relative;
+            max-height: 85vh;
+            overflow-y: auto;
         }
         .close-btn {
             color: #aaa;
@@ -232,7 +274,7 @@ $categories_result = $conn->query($categories_sql);
             list-style: none;
             padding: 0;
             margin: 15px 0;
-            max-height: 250px;
+            max-height: 200px;
             overflow-y: auto;
         }
         .cart-item {
@@ -242,6 +284,40 @@ $categories_result = $conn->query($categories_sql);
             padding: 8px 0;
             border-bottom: 1px solid #eee;
         }
+        
+        /* حقول إدخال بيانات الزبون */
+        .customer-form {
+            margin-top: 15px;
+            border-top: 2px solid #eee;
+            padding-top: 15px;
+        }
+        .customer-form h3 {
+            margin-bottom: 10px;
+            font-size: 17px;
+            color: var(--primary-color);
+        }
+        .form-group {
+            margin-bottom: 10px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 9px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-family: 'Cairo', sans-serif;
+            box-sizing: border-box;
+            outline: none;
+        }
+        .form-group input:focus, .form-group textarea:focus {
+            border-color: var(--accent-color);
+        }
+
         .whatsapp-checkout-btn {
             background-color: #25d366;
             color: white;
@@ -264,9 +340,37 @@ $categories_result = $conn->query($categories_sql);
             margin: 15px 0;
             text-align: left;
         }
+
+        /* زر العودة للأعلى */
+        #scrollTopBtn {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            z-index: 99;
+            font-size: 18px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            outline: none;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            transition: background-color 0.3s;
+        }
+        #scrollTopBtn:hover {
+            background-color: var(--accent-color);
+        }
     </style>
 </head>
 <body>
+
+<!-- شريط إعلاني متحرك بالأعلى -->
+<div class="announcement-bar">
+    <marquee behavior="scroll" direction="right">🔥 أهلاً بكم في Ali And Store - اطلب الآن وأدخل معلوماتك لتصلك الطلبية بكل سهولة عبر الواتساب 🔥</marquee>
+</div>
 
 <header>
     <h1>Ali And Store</h1>
@@ -275,19 +379,14 @@ $categories_result = $conn->query($categories_sql);
 
 <!-- شريط التنقل العلوي (Top Bar) -->
 <div class="top-nav-bar">
-    <!-- 1. المنيو -->
     <button class="top-nav-item" onclick="toggleMenuModal()">
-        <span class="icon">📋</span>
-        المنيو
+        <span class="icon">📋</span> المنيو
     </button>
 
-    <!-- 2. زر تغيير اللون (مجموعة ألوان موسعة) -->
     <div style="position: relative; display: flex; flex: 1; justify-content: center;">
         <button class="top-nav-item" onclick="toggleColorPopup()">
-            <span class="icon">🎨</span>
-            الألوان
+            <span class="icon">🎨</span> الألوان
         </button>
-        <!-- قائمة الألوان المنبثقة الموسعة -->
         <div id="colorPopup" class="color-popup">
             <span class="color-circle" style="background-color: #2c3e50;" onclick="changeTheme('#2c3e50', '#3498db')" title="كلاسيكي داكن"></span>
             <span class="color-circle" style="background-color: #27ae60;" onclick="changeTheme('#27ae60', '#2ecc71')" title="أخضر زاهي"></span>
@@ -300,17 +399,18 @@ $categories_result = $conn->query($categories_sql);
         </div>
     </div>
 
-    <!-- 3. About الموقع -->
     <button class="top-nav-item" onclick="alert('Ali And Store: متجرك المفضل لتلبية كافة احتياجاتك اليومية بأفضل الأسعار وأسرع خدمة توصيل.');">
-        <span class="icon">ℹ️</span>
-        عن المتجر
+        <span class="icon">ℹ️</span> عن المتجر
     </button>
 
-    <!-- 4. التواصل معنا -->
-    <a href="https://wa.me/96181058043" target="_blank" class="top-nav-item" style="color: #2ecc71;">
-        <span class="icon">📞</span>
-        التواصل
+    <a href="https://wa.me/96181058043" target="_blank" class="top-nav-item" style="color: #2ecc71; text-decoration:none;">
+        <span class="icon">📞</span> التواصل
     </a>
+</div>
+
+<!-- شريط البحث الفوري -->
+<div class="search-container">
+    <input type="text" id="searchInput" class="search-input" placeholder="🔍 ابحث عن أي منتج تريد..." onkeyup="filterProducts()">
 </div>
 
 <div class="container">
@@ -329,7 +429,7 @@ $categories_result = $conn->query($categories_sql);
 
             if ($products_result && $products_result->num_rows > 0) {
                 while($product = $products_result->fetch_assoc()) {
-                    echo '<div class="product-card">';
+                    echo '<div class="product-card" data-name="' . htmlspecialchars($product['name'], ENT_QUOTES) . '">';
                     if (!empty($product['image'])) {
                         echo '<img src="' . htmlspecialchars($product['image']) . '" alt="' . htmlspecialchars($product['name']) . '">';
                     } else {
@@ -355,7 +455,10 @@ $categories_result = $conn->query($categories_sql);
     ?>
 </div>
 
-<!-- نافذة منبثقة للمنيو (الأقسام) -->
+<!-- زر العودة للأعلى -->
+<button onclick="scrollToTop()" id="scrollTopBtn" title="العودة للأعلى">⬆</button>
+
+<!-- نافذة المنيو المنبثقة -->
 <div id="menuModal" class="modal">
     <div class="modal-content" style="max-width: 350px; text-align: center;">
         <span class="close-btn" onclick="toggleMenuModal()">&times;</span>
@@ -367,7 +470,7 @@ $categories_result = $conn->query($categories_sql);
             $cat_mb_result = $conn_mb->query("SELECT DISTINCT category FROM products WHERE category IS NOT NULL AND category != ''");
             if ($cat_mb_result) {
                 while ($cmb = $cat_mb_result->fetch_assoc()) {
-                    echo '<a href="#cat-' . md5($cmb['category']) . '" onclick="toggleMenuModal()" style="background:#3498db; color:white; padding:10px; border-radius:5px; text-decoration:none; font-weight:bold;">' . htmlspecialchars($cmb['category']) . '</a>';
+                    echo '<a href="#cat-' . md5($cmb['category']) . '" onclick="toggleMenuModal()" style="background:var(--accent-color); color:white; padding:10px; border-radius:5px; text-decoration:none; font-weight:bold;">' . htmlspecialchars($cmb['category']) . '</a>';
                 }
             }
             $conn_mb->close();
@@ -376,21 +479,41 @@ $categories_result = $conn->query($categories_sql);
     </div>
 </div>
 
-<!-- نافذة سلة المشتريات المنبثقة -->
+<!-- نافذة سلة المشتريات ومعلومات الزبون -->
 <div id="cartModal" class="modal">
     <div class="modal-content">
         <span class="close-btn" onclick="toggleCartModal()">&times;</span>
         <h2>سلة المشتريات</h2>
+        
         <ul id="cart-items" class="cart-items-list">
             <p style="text-align:center; color:#777;">السلة فارغة حالياً.</p>
         </ul>
         <div class="total-price">المجموع الكلي: <span id="cart-total">0</span> ليرة</div>
+
+        <!-- قسم إدخال بيانات الزبون -->
+        <div class="customer-form">
+            <h3>📝 أدخل معلومات التوصيل:</h3>
+            <div class="form-group">
+                <label>اسم الزبون:</label>
+                <input type="text" id="custName" placeholder="أدخل اسمك الكريم">
+            </div>
+            <div class="form-group">
+                <label>رقم الهاتف:</label>
+                <input type="text" id="custPhone" placeholder="أدخل رقم هاتفك">
+            </div>
+            <div class="form-group">
+                <label>العنوان بالتفصيل:</label>
+                <textarea id="custAddress" rows="2" placeholder="المدينة، الشارع، البناء..."></textarea>
+            </div>
+        </div>
+
         <button class="whatsapp-checkout-btn" onclick="sendToWhatsApp()">إرسال الطلب عبر واتساب 📱</button>
     </div>
 </div>
 
 <script>
-let cart = [];
+let cart = JSON.parse(localStorage.getItem('ali_store_cart')) || [];
+updateCartUI();
 
 function addToCart(name, price) {
     let existingItem = cart.find(item => item.name === name);
@@ -399,8 +522,13 @@ function addToCart(name, price) {
     } else {
         cart.push({ name: name, price: price, quantity: 1 });
     }
-    updateCartUI();
+    saveAndupdateCart();
     alert("تمت إضافة " + name + " إلى السلة");
+}
+
+function saveAndupdateCart() {
+    localStorage.setItem('ali_store_cart', JSON.stringify(cart));
+    updateCartUI();
 }
 
 function updateCartUI() {
@@ -436,7 +564,7 @@ function updateCartUI() {
 
 function removeFromCart(index) {
     cart.splice(index, 1);
-    updateCartUI();
+    saveAndupdateCart();
 }
 
 function toggleCartModal() {
@@ -460,27 +588,69 @@ function changeTheme(primary, accent) {
     document.getElementById('colorPopup').style.display = 'none';
 }
 
+// البحث الفوري عن المنتجات
+function filterProducts() {
+    let input = document.getElementById('searchInput').value.toLowerCase();
+    let cards = document.querySelectorAll('.product-card');
+
+    cards.forEach(card => {
+        let name = card.getAttribute('data-name').toLowerCase();
+        if (name.includes(input)) {
+            card.style.display = "flex";
+        } else {
+            card.style.display = "none";
+        }
+    });
+}
+
 function sendToWhatsApp() {
     if (cart.length === 0) {
         alert("السلة فارغة! قم بإضافة منتجات أولاً.");
         return;
     }
 
-    let message = "مرحباً، أريد طلب المنتجات التالية من Ali And Store:\n\n";
-    let totalPrice = 0;
+    let name = document.getElementById('custName').value.trim();
+    let phone = document.getElementById('custPhone').value.trim();
+    let address = document.getElementById('custAddress').value.trim();
 
+    if (!name || !phone || !address) {
+        alert("الرجاء تعبئة جميع بيانات الزبون (الاسم، الهاتف، والعنوان) قبل إرسال الطلب!");
+        return;
+    }
+
+    let message = `🛒 *طلب جديد من Ali And Store* 🛒\n\n`;
+    message += `👤 *الاسم:* ${name}\n`;
+    message += `📞 *الهاتف:* ${phone}\n`;
+    message += `📍 *العنوان:* ${address}\n\n`;
+    message += `🛍️ *المنتجات المطلوبة:*\n`;
+
+    let totalPrice = 0;
     cart.forEach(item => {
         let itemTotal = item.price * item.quantity;
         message += `- ${item.name} (الكمية: ${item.quantity}) - السعر: ${itemTotal} ليرة\n`;
         totalPrice += itemTotal;
     });
 
-    message += `\nالمجموع الكلي: ${totalPrice} ليرة`;
+    message += `\n💰 *المجموع الكلي:* ${totalPrice} ليرة`;
 
     let phoneNumber = "96181058043"; 
     let encodedMessage = encodeURIComponent(message);
     
     window.open(`https://wa.me/${phoneNumber}?text=${encodedMessage}`, '_blank');
+}
+
+// ظهور وإخفاء زر العودة للأعلى
+window.onscroll = function() {
+    let btn = document.getElementById("scrollTopBtn");
+    if (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) {
+        btn.style.display = "block";
+    } else {
+        btn.style.display = "none";
+    }
+};
+
+function scrollToTop() {
+    window.scrollTo({top: 0, behavior: 'smooth'});
 }
 
 window.onclick = function(event) {
