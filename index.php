@@ -1,15 +1,12 @@
 <?php
-// إظهار الأخطاء لاكتشاف أي مشكلة فوراً بدلاً من الشاشة البيضاء
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
+// اتصال بقاعدة البيانات (يدعم التشغيل المحلي وعلى Railway تلقائياً)
+$host = getenv('MYSQLHOST') ?: "localhost";
+$user = getenv('MYSQLUSER') ?: "root";
+$pass = getenv('MYSQLPASSWORD') ?: "";
+$dbname = getenv('MYSQLDATABASE') ?: "supermarket_alsaaha";
+$port = getenv('MYSQLPORT') ?: 3306;
 
-// اتصال بقاعدة البيانات
-$host = "localhost";
-$user = "root";
-$pass = "";
-$dbname = "supermarket_alsaaha"; // تأكد أن هذا الاسم مطابق تماماً لقاعدة البيانات لديك
-
-$conn = new mysqli($host, $user, $pass, $dbname);
+$conn = new mysqli($host, $user, $pass, $dbname, (int)$port);
 if ($conn->connect_error) {
     die("فشل الاتصال بقاعدة البيانات: " . $conn->connect_error);
 }
@@ -28,12 +25,9 @@ $categories_result = $conn->query($categories_sql);
     <title>سوبرماركت الساحة</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        * {
-            box-sizing: border-box;
-        }
         body {
             font-family: 'Cairo', sans-serif;
-            background-color: #f4f7f6;
+            background-color: #f8f9fa;
             margin: 0;
             padding: 0;
             direction: rtl;
@@ -47,42 +41,21 @@ $categories_result = $conn->query($categories_sql);
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
-            position: sticky;
-            top: 0;
-            z-index: 999;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
         header h1 {
             margin: 0;
-            font-size: 22px;
-        }
-        .search-box {
-            flex: 1;
-            max-width: 400px;
-            margin: 0 20px;
-        }
-        .search-box input {
-            width: 100%;
-            padding: 8px 15px;
-            border-radius: 20px;
-            border: none;
-            font-family: 'Cairo', sans-serif;
-            outline: none;
+            font-size: 24px;
         }
         .cart-icon-btn {
             background-color: #27ae60;
             color: white;
             border: none;
-            padding: 8px 18px;
-            border-radius: 20px;
+            padding: 10px 20px;
+            border-radius: 5px;
             cursor: pointer;
             font-family: 'Cairo', sans-serif;
-            font-size: 15px;
+            font-size: 16px;
             font-weight: bold;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            transition: background 0.3s;
         }
         .cart-icon-btn:hover {
             background-color: #219653;
@@ -96,44 +69,37 @@ $categories_result = $conn->query($categories_sql);
             margin-bottom: 35px;
         }
         .category-title {
-            font-size: 20px;
+            font-size: 22px;
             color: #2c3e50;
             border-bottom: 2px solid #3498db;
             padding-bottom: 5px;
             margin-bottom: 20px;
-            font-weight: bold;
         }
         .products-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
             gap: 20px;
         }
         .product-card {
             background: white;
-            border-radius: 10px;
+            border-radius: 8px;
             padding: 15px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
             text-align: center;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-        .product-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         }
         .product-card img {
-            width: 100%;
-            height: 130px;
+            max-width: 100%;
+            height: 140px;
             object-fit: cover;
-            border-radius: 8px;
+            border-radius: 5px;
         }
         .product-title {
-            font-size: 16px;
+            font-size: 17px;
             font-weight: 600;
             margin: 10px 0 5px;
-            color: #333;
         }
         .product-price {
             color: #27ae60;
@@ -146,12 +112,11 @@ $categories_result = $conn->query($categories_sql);
             color: white;
             border: none;
             padding: 8px 15px;
-            border-radius: 6px;
+            border-radius: 5px;
             cursor: pointer;
             font-family: 'Cairo', sans-serif;
             width: 100%;
             font-weight: 600;
-            transition: background 0.2s;
         }
         .btn:hover {
             background-color: #2980b9;
@@ -167,25 +132,23 @@ $categories_result = $conn->query($categories_sql);
             width: 100%;
             height: 100%;
             background-color: rgba(0,0,0,0.5);
-            backdrop-filter: blur(3px);
         }
         .modal-content {
             background-color: white;
-            margin: 8% auto;
+            margin: 10% auto;
             padding: 20px;
-            border-radius: 12px;
+            border-radius: 8px;
             width: 90%;
             max-width: 500px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
             position: relative;
         }
         .close-btn {
             color: #aaa;
             float: left;
-            font-size: 26px;
+            font-size: 28px;
             font-weight: bold;
             cursor: pointer;
-            line-height: 20px;
         }
         .close-btn:hover {
             color: black;
@@ -194,96 +157,58 @@ $categories_result = $conn->query($categories_sql);
             list-style: none;
             padding: 0;
             margin: 15px 0;
-            max-height: 280px;
+            max-height: 250px;
             overflow-y: auto;
         }
         .cart-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px 0;
-            border-bottom: 1px solid #f1f1f1;
-            font-size: 14px;
-        }
-        .cart-item-controls {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .cart-item-controls button {
-            background: #e0e0e0;
-            border: none;
-            width: 25px;
-            height: 25px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-        .cart-item-controls button:hover {
-            background: #d0d0d0;
-        }
-        .remove-item-btn {
-            background: #e74c3c !important;
-            color: white;
-            font-size: 12px;
-            padding: 2px 6px;
-            border-radius: 4px;
-            border: none;
-            cursor: pointer;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
         }
         .whatsapp-checkout-btn {
             background-color: #25d366;
             color: white;
             border: none;
-            padding: 12px;
-            border-radius: 8px;
+            padding: 10px;
+            border-radius: 5px;
             width: 100%;
             font-family: 'Cairo', sans-serif;
             font-size: 16px;
             font-weight: bold;
             cursor: pointer;
             margin-top: 10px;
-            transition: background 0.3s;
         }
         .whatsapp-checkout-btn:hover {
             background-color: #1ebe5d;
         }
         .total-price {
             font-weight: bold;
-            font-size: 17px;
+            font-size: 18px;
             margin: 15px 0;
             text-align: left;
-            color: #2c3e50;
-        }
-        .no-results {
-            text-align: center;
-            color: #777;
-            margin: 40px 0;
-            display: none;
         }
     </style>
 </head>
 <body>
 
 <header>
-    <h1>🛒 سوبرماركت الساحة</h1>
-    <div class="search-box">
-        <input type="text" id="searchInput" placeholder="ابحث عن أي منتج..." onkeyup="filterProducts()">
-    </div>
-    <button class="cart-icon-btn" onclick="toggleCartModal()">
-        السلة (<span id="cart-count">0</span>)
-    </button>
+    <h1>سوبرماركت الساحة</h1>
+    <button class="cart-icon-btn" onclick="toggleCartModal()">🛒 سلة المشتريات (<span id="cart-count">0</span>)</button>
 </header>
 
 <div class="container">
     <?php
     if ($categories_result && $categories_result->num_rows > 0) {
+        // حلقة تكرارية لكل تصنيف (Category)
         while ($cat_row = $categories_result->fetch_assoc()) {
             $current_category = $cat_row['category'];
-            echo '<div class="category-section" data-category="' . htmlspecialchars($current_category) . '">';
+            echo '<div class="category-section">';
             echo '<div class="category-title">' . htmlspecialchars($current_category) . '</div>';
             echo '<div class="products-grid">';
 
+            // جلب المنتجات التابعة لهذا التصنيف حصراً
             $stmt = $conn->prepare("SELECT * FROM products WHERE category = ?");
             $stmt->bind_param("s", $current_category);
             $stmt->execute();
@@ -291,9 +216,13 @@ $categories_result = $conn->query($categories_sql);
 
             if ($products_result && $products_result->num_rows > 0) {
                 while($product = $products_result->fetch_assoc()) {
-                    $imgSrc = !empty($product['image']) ? htmlspecialchars($product['image']) : 'https://via.placeholder.com/150';
-                    echo '<div class="product-card" data-name="' . htmlspecialchars($product['name']) . '">';
-                    echo '<img src="' . $imgSrc . '" alt="' . htmlspecialchars($product['name']) . '">';
+                    echo '<div class="product-card">';
+                    if (!empty($product['image'])) {
+                        echo '<img src="' . htmlspecialchars($product['image']) . '" alt="' . htmlspecialchars($product['name']) . '">';
+                    } else {
+                        // صورة افتراضية في حال عدم توفر صورة
+                        echo '<img src="https://via.placeholder.com/150" alt="منتج">';
+                    }
                     echo '<div>';
                     echo '<div class="product-title">' . htmlspecialchars($product['name']) . '</div>';
                     echo '<div class="product-price">' . htmlspecialchars($product['price']) . ' ليرة</div>';
@@ -304,22 +233,21 @@ $categories_result = $conn->query($categories_sql);
             }
             $stmt->close();
 
-            echo '</div>'; 
-            echo '</div>'; 
+            echo '</div>'; // نهاية products-grid
+            echo '</div>'; // نهاية category-section
         }
     } else {
-        echo '<p style="text-align:center; margin-top:50px;">لا توجد تصنيفات أو منتجات متوفرة حالياً في قاعدة البيانات.</p>';
+        echo '<p style="text-align:center; margin-top:50px;">لا توجد تصنيفات أو منتجات متوفرة حالياً.</p>';
     }
     $conn->close();
     ?>
-    <div id="noResults" class="no-results">عذراً، لم يتم العثور على منتج بهذا الاسم.</div>
 </div>
 
 <!-- نافذة سلة المشتريات المنبثقة -->
 <div id="cartModal" class="modal">
     <div class="modal-content">
         <span class="close-btn" onclick="toggleCartModal()">&times;</span>
-        <h2 style="margin-top:0; font-size:20px;">سلة المشتريات</h2>
+        <h2>سلة المشتريات</h2>
         <ul id="cart-items" class="cart-items-list">
             <p style="text-align:center; color:#777;">السلة فارغة حالياً.</p>
         </ul>
@@ -339,6 +267,7 @@ function addToCart(name, price) {
         cart.push({ name: name, price: price, quantity: 1 });
     }
     updateCartUI();
+    alert("تمت إضافة " + name + " إلى السلة");
 }
 
 function updateCartUI() {
@@ -360,16 +289,9 @@ function updateCartUI() {
             let li = document.createElement('li');
             li.className = 'cart-item';
             li.innerHTML = `
-                <div>
-                    <strong>${item.name}</strong><br>
-                    <span style="color:#27ae60; font-size:13px;">${item.price} ليرة</span>
-                </div>
-                <div class="cart-item-controls">
-                    <button onclick="changeQuantity(${index}, -1)">-</button>
-                    <span>${item.quantity}</span>
-                    <button onclick="changeQuantity(${index}, 1)">+</button>
-                    <button class="remove-item-btn" onclick="removeFromCart(${index})">حذف</button>
-                </div>
+                <span>${item.name} (${item.quantity})</span>
+                <span>${item.price * item.quantity} ليرة</span>
+                <button onclick="removeFromCart(${index})" style="background:#e74c3c; color:white; border:none; padding:3px 8px; border-radius:3px; cursor:pointer;">حذف</button>
             `;
             cartItemsList.appendChild(li);
         });
@@ -377,14 +299,6 @@ function updateCartUI() {
 
     cartCount.innerText = totalCount;
     cartTotal.innerText = totalPrice;
-}
-
-function changeQuantity(index, amount) {
-    cart[index].quantity += amount;
-    if (cart[index].quantity <= 0) {
-        cart.splice(index, 1);
-    }
-    updateCartUI();
 }
 
 function removeFromCart(index) {
@@ -395,32 +309,6 @@ function removeFromCart(index) {
 function toggleCartModal() {
     let modal = document.getElementById('cartModal');
     modal.style.display = modal.style.display === 'block' ? 'none' : 'block';
-}
-
-function filterProducts() {
-    let input = document.getElementById('searchInput').value.toLowerCase();
-    let sections = document.querySelectorAll('.category-section');
-    let hasVisibleProducts = false;
-
-    sections.forEach(section => {
-        let products = section.querySelectorAll('.product-card');
-        let sectionVisible = false;
-
-        products.forEach(product => {
-            let name = product.getAttribute('data-name').toLowerCase();
-            if (name.includes(input)) {
-                product.style.display = 'flex';
-                sectionVisible = true;
-                hasVisibleProducts = true;
-            } else {
-                product.style.display = 'none';
-            }
-        });
-
-        section.style.display = sectionVisible ? 'block' : 'none';
-    });
-
-    document.getElementById('noResults').style.display = hasVisibleProducts ? 'none' : 'block';
 }
 
 function sendToWhatsApp() {
@@ -440,13 +328,14 @@ function sendToWhatsApp() {
 
     message += `\nالمجموع الكلي: ${totalPrice} ليرة`;
 
-    // استبدل الرقم أدناه برقم الواتساب الخاص بك مع رمز الدولة (مثال: 9639xxxxxxxx)
+    // استبدل الرقم أدناه برقم الواتساب الخاص بالمتجر مع رمز الدولة
     let phoneNumber = "963000000000"; 
     let encodedMessage = encodeURIComponent(message);
     
     window.open(`https://wa.me/${phoneNumber}?text=${encodedMessage}`, '_blank');
 }
 
+// إغلاق النافذة المنبثقة عند النقر خارجها
 window.onclick = function(event) {
     let modal = document.getElementById('cartModal');
     if (event.target === modal) {
