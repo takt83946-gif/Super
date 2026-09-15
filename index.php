@@ -38,7 +38,6 @@ $categories_result = $conn->query($categories_sql);
             direction: rtl;
             text-align: right;
             transition: background-color 0.3s;
-            padding-bottom: 70px; /* مسافة لكي لا يغطي الشريط السفلي المنتجات الأخيرة */
         }
         header {
             background-color: var(--primary-color);
@@ -55,27 +54,24 @@ $categories_result = $conn->query($categories_sql);
             font-size: 24px;
         }
         
-        /* شريط الهاتف السفلي الثابت (Bottom Navigation Bar) */
-        .bottom-nav-bar {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background-color: var(--primary-color);
+        /* شريط التنقل العلوي (Top Bar) */
+        .top-nav-bar {
+            background-color: #34495e;
             color: white;
             display: flex;
             justify-content: space-around;
             align-items: center;
-            padding: 8px 0;
-            box-shadow: 0 -2px 10px rgba(0,0,0,0.15);
-            z-index: 999;
-            transition: background-color 0.3s;
+            padding: 10px 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            position: relative;
+            z-index: 99;
+            flex-wrap: wrap;
         }
-        .bottom-nav-item {
+        .top-nav-item {
             display: flex;
             flex-direction: column;
             align-items: center;
-            font-size: 12px;
+            font-size: 13px;
             font-weight: 600;
             color: white;
             cursor: pointer;
@@ -86,33 +82,40 @@ $categories_result = $conn->query($categories_sql);
             border: none;
             font-family: 'Cairo', sans-serif;
         }
-        .bottom-nav-item span.icon {
-            font-size: 18px;
+        .top-nav-item span.icon {
+            font-size: 16px;
             margin-bottom: 2px;
         }
-        .bottom-nav-item:hover {
+        .top-nav-item:hover {
             color: var(--accent-color);
         }
 
-        /* نافذة اختيار الألوان المنبثقة من الشريط السفلي */
+        /* قائمة اختيار الألوان المنبثقة من الشريط العلوي (أكثر ألواناً وتنوعاً) */
         .color-popup {
             display: none;
             position: absolute;
-            bottom: 60px;
+            top: 50px;
             background: white;
-            padding: 10px;
+            padding: 12px;
             border-radius: 8px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-            gap: 8px;
+            gap: 10px;
             align-items: center;
             z-index: 1000;
+            flex-wrap: wrap;
+            max-width: 220px;
+            justify-content: center;
         }
         .color-circle {
-            width: 25px;
-            height: 25px;
+            width: 26px;
+            height: 26px;
             border-radius: 50%;
             cursor: pointer;
             border: 2px solid #ddd;
+            transition: transform 0.2s;
+        }
+        .color-circle:hover {
+            transform: scale(1.15);
         }
 
         .cart-icon-btn {
@@ -270,6 +273,46 @@ $categories_result = $conn->query($categories_sql);
     <button class="cart-icon-btn" onclick="toggleCartModal()">🛒 سلة المشتريات (<span id="cart-count">0</span>)</button>
 </header>
 
+<!-- شريط التنقل العلوي (Top Bar) -->
+<div class="top-nav-bar">
+    <!-- 1. المنيو -->
+    <button class="top-nav-item" onclick="toggleMenuModal()">
+        <span class="icon">📋</span>
+        المنيو
+    </button>
+
+    <!-- 2. زر تغيير اللون (مجموعة ألوان موسعة) -->
+    <div style="position: relative; display: flex; flex: 1; justify-content: center;">
+        <button class="top-nav-item" onclick="toggleColorPopup()">
+            <span class="icon">🎨</span>
+            الألوان
+        </button>
+        <!-- قائمة الألوان المنبثقة الموسعة -->
+        <div id="colorPopup" class="color-popup">
+            <span class="color-circle" style="background-color: #2c3e50;" onclick="changeTheme('#2c3e50', '#3498db')" title="كلاسيكي داكن"></span>
+            <span class="color-circle" style="background-color: #27ae60;" onclick="changeTheme('#27ae60', '#2ecc71')" title="أخضر زاهي"></span>
+            <span class="color-circle" style="background-color: #8e44ad;" onclick="changeTheme('#8e44ad', '#9b59b6')" title="بنفسجي ملكي"></span>
+            <span class="color-circle" style="background-color: #d35400;" onclick="changeTheme('#d35400', '#e67e22')" title="برتقالي دافئ"></span>
+            <span class="color-circle" style="background-color: #c0392b;" onclick="changeTheme('#c0392b', '#e74c3c')" title="أحمر جريء"></span>
+            <span class="color-circle" style="background-color: #16a085;" onclick="changeTheme('#16a085', '#1abc9c')" title="تركواز بحري"></span>
+            <span class="color-circle" style="background-color: #d4ac0d;" onclick="changeTheme('#d4ac0d', '#f1c40f')" title="أصفر ذهبي"></span>
+            <span class="color-circle" style="background-color: #34495e;" onclick="changeTheme('#34495e', '#7f8c8d')" title="رمادي معدني"></span>
+        </div>
+    </div>
+
+    <!-- 3. About الموقع -->
+    <button class="top-nav-item" onclick="alert('Ali And Store: متجرك المفضل لتلبية كافة احتياجاتك اليومية بأفضل الأسعار وأسرع خدمة توصيل.');">
+        <span class="icon">ℹ️</span>
+        عن المتجر
+    </button>
+
+    <!-- 4. التواصل معنا -->
+    <a href="https://wa.me/96181058043" target="_blank" class="top-nav-item" style="color: #2ecc71;">
+        <span class="icon">📞</span>
+        التواصل
+    </a>
+</div>
+
 <div class="container">
     <?php
     if ($categories_result && $categories_result->num_rows > 0) {
@@ -310,42 +353,6 @@ $categories_result = $conn->query($categories_sql);
     }
     $conn->close();
     ?>
-</div>
-
-<!-- شريط الهاتف السفلي الثابت (Bottom Navigation Bar) -->
-<div class="bottom-nav-bar">
-    <!-- 1. المنيو -->
-    <button class="bottom-nav-item" onclick="toggleMenuModal()">
-        <span class="icon">📋</span>
-        المنيو
-    </button>
-
-    <!-- 2. زر تغيير اللون -->
-    <div style="position: relative; display: flex; flex: 1; justify-content: center;">
-        <button class="bottom-nav-item" onclick="toggleColorPopup()">
-            <span class="icon">🎨</span>
-            الألوان
-        </button>
-        <!-- قائمة الألوان المنبثقة -->
-        <div id="colorPopup" class="color-popup">
-            <span class="color-circle" style="background-color: #2c3e50;" onclick="changeTheme('#2c3e50', '#3498db')" title="كلاسيكي"></span>
-            <span class="color-circle" style="background-color: #8e44ad;" onclick="changeTheme('#8e44ad', '#9b59b6')" title="بنفسجي"></span>
-            <span class="color-circle" style="background-color: #d35400;" onclick="changeTheme('#d35400', '#e67e22')" title="برتقالي"></span>
-            <span class="color-circle" style="background-color: #16a085;" onclick="changeTheme('#16a085', '#1abc9c')" title="تركواز"></span>
-        </div>
-    </div>
-
-    <!-- 3. About الموقع -->
-    <button class="bottom-nav-item" onclick="alert('Ali And Store: متجرك المفضل لتلبية كافة احتياجاتك اليومية بأفضل الأسعار وأسرع خدمة توصيل.');">
-        <span class="icon">ℹ️</span>
-        عن المتجر
-    </button>
-
-    <!-- 4. التواصل معنا -->
-    <a href="https://wa.me/96181058043" target="_blank" class="bottom-nav-item" style="color: #2ecc71;">
-        <span class="icon">📞</span>
-        التواصل
-    </a>
 </div>
 
 <!-- نافذة منبثقة للمنيو (الأقسام) -->
