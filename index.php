@@ -1,5 +1,7 @@
 <?php
-// اتصال بقاعدة البيانات (يدعم التشغيل المحلي وعلى Railway تلقائياً)
+/* ==========================================================
+   1. قسم الاتصال بقاعدة البيانات وإعدادات السيرفر
+   ========================================================== */
 $host = getenv('MYSQLHOST') ?: "localhost";
 $user = getenv('MYSQLUSER') ?: "root";
 $pass = getenv('MYSQLPASSWORD') ?: "";
@@ -12,7 +14,9 @@ if ($conn->connect_error) {
 }
 $conn->set_charset("utf8");
 
-// جلب التصنيفات الموجودة أولاً
+/* ==========================================================
+   2. قسم جلب التصنيفات من قاعدة البيانات
+   ========================================================== */
 $categories_sql = "SELECT DISTINCT category FROM products WHERE category IS NOT NULL AND category != ''";
 $categories_result = $conn->query($categories_sql);
 ?>
@@ -24,7 +28,11 @@ $categories_result = $conn->query($categories_sql);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ali And Store</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    
     <style>
+        /* ==========================================================
+           3. قسم تنسيقات التصميم (CSS Styles)
+           ========================================================== */
         :root {
             --primary-color: #2c3e50;
             --accent-color: #3498db;
@@ -39,6 +47,7 @@ $categories_result = $conn->query($categories_sql);
             text-align: right;
             transition: background-color 0.3s;
         }
+
         /* شريط الإعلانات المتحرك العلوي */
         .announcement-bar {
             background-color: #e74c3c;
@@ -53,6 +62,7 @@ $categories_result = $conn->query($categories_sql);
             width: 100%;
         }
 
+        /* الهيدر الرئيسي */
         header {
             background-color: var(--primary-color);
             color: white;
@@ -169,6 +179,7 @@ $categories_result = $conn->query($categories_sql);
             border-color: var(--accent-color);
         }
 
+        /* حاوية المنتجات والأقسام */
         .container {
             max-width: 1200px;
             margin: 20px auto;
@@ -237,7 +248,7 @@ $categories_result = $conn->query($categories_sql);
             opacity: 0.9;
         }
         
-        /* تصميم النوافذ المنبثقة */
+        /* النوافذ المنبثقة (Modals) */
         .modal {
             display: none;
             position: fixed;
@@ -250,7 +261,7 @@ $categories_result = $conn->query($categories_sql);
         }
         .modal-content {
             background-color: white;
-            margin: 8% auto;
+            margin: 6% auto;
             padding: 20px;
             border-radius: 8px;
             width: 90%;
@@ -274,7 +285,7 @@ $categories_result = $conn->query($categories_sql);
             list-style: none;
             padding: 0;
             margin: 15px 0;
-            max-height: 200px;
+            max-height: 180px;
             overflow-y: auto;
         }
         .cart-item {
@@ -285,7 +296,7 @@ $categories_result = $conn->query($categories_sql);
             border-bottom: 1px solid #eee;
         }
         
-        /* حقول إدخال بيانات الزبون */
+        /* نموذج بيانات الزبون */
         .customer-form {
             margin-top: 15px;
             border-top: 2px solid #eee;
@@ -334,12 +345,46 @@ $categories_result = $conn->query($categories_sql);
         .whatsapp-checkout-btn:hover {
             background-color: #1ebe5d;
         }
+        .clear-cart-btn {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: 'Cairo', sans-serif;
+            font-size: 13px;
+            margin-top: 5px;
+        }
         .total-price {
             font-weight: bold;
             font-size: 18px;
             margin: 15px 0;
             text-align: left;
         }
+
+        /* رسالة التنبيه المنبثقة المؤقتة (Toast) */
+        #toast {
+            visibility: hidden;
+            min-width: 250px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 5px;
+            padding: 12px;
+            position: fixed;
+            z-index: 2000;
+            left: 50%;
+            bottom: 30px;
+            transform: translateX(-50%);
+            font-size: 15px;
+        }
+        #toast.show {
+            visibility: visible;
+            animation: fadein 0.5s, fadeout 0.5s 2s;
+        }
+        @keyframes fadein {from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;}}
+        @keyframes fadeout {from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;}}
 
         /* زر العودة للأعلى */
         #scrollTopBtn {
@@ -367,17 +412,22 @@ $categories_result = $conn->query($categories_sql);
 </head>
 <body>
 
-<!-- شريط إعلاني متحرك بالأعلى -->
+<!-- ==========================================================
+   4. هيكل واجهة المستخدم (HTML Layout)
+   ========================================================== -->
+
+<!-- شريط الإعلانات -->
 <div class="announcement-bar">
-    <marquee behavior="scroll" direction="right">🔥 أهلاً بكم في Ali And Store - اطلب الآن وأدخل معلوماتك لتصلك الطلبية بكل سهولة عبر الواتساب 🔥</marquee>
+    <marquee behavior="scroll" direction="right">🔥 أهلاً بكم في Ali And Store - تسوق الآن بكل سهولة وأرسل طلبك عبر الواتساب 🔥</marquee>
 </div>
 
+<!-- الهيدر -->
 <header>
     <h1>Ali And Store</h1>
     <button class="cart-icon-btn" onclick="toggleCartModal()">🛒 سلة المشتريات (<span id="cart-count">0</span>)</button>
 </header>
 
-<!-- شريط التنقل العلوي (Top Bar) -->
+<!-- شريط التنقل العلوي -->
 <div class="top-nav-bar">
     <button class="top-nav-item" onclick="toggleMenuModal()">
         <span class="icon">📋</span> المنيو
@@ -388,18 +438,18 @@ $categories_result = $conn->query($categories_sql);
             <span class="icon">🎨</span> الألوان
         </button>
         <div id="colorPopup" class="color-popup">
-            <span class="color-circle" style="background-color: #2c3e50;" onclick="changeTheme('#2c3e50', '#3498db')" title="كلاسيكي داكن"></span>
-            <span class="color-circle" style="background-color: #27ae60;" onclick="changeTheme('#27ae60', '#2ecc71')" title="أخضر زاهي"></span>
-            <span class="color-circle" style="background-color: #8e44ad;" onclick="changeTheme('#8e44ad', '#9b59b6')" title="بنفسجي ملكي"></span>
-            <span class="color-circle" style="background-color: #d35400;" onclick="changeTheme('#d35400', '#e67e22')" title="برتقالي دافئ"></span>
-            <span class="color-circle" style="background-color: #c0392b;" onclick="changeTheme('#c0392b', '#e74c3c')" title="أحمر جريء"></span>
-            <span class="color-circle" style="background-color: #16a085;" onclick="changeTheme('#16a085', '#1abc9c')" title="تركواز بحري"></span>
-            <span class="color-circle" style="background-color: #d4ac0d;" onclick="changeTheme('#d4ac0d', '#f1c40f')" title="أصفر ذهبي"></span>
-            <span class="color-circle" style="background-color: #34495e;" onclick="changeTheme('#34495e', '#7f8c8d')" title="رمادي معدني"></span>
+            <span class="color-circle" style="background-color: #2c3e50;" onclick="changeTheme('#2c3e50', '#3498db')" title="كلاسيكي"></span>
+            <span class="color-circle" style="background-color: #27ae60;" onclick="changeTheme('#27ae60', '#2ecc71')" title="أخضر"></span>
+            <span class="color-circle" style="background-color: #8e44ad;" onclick="changeTheme('#8e44ad', '#9b59b6')" title="بنفسجي"></span>
+            <span class="color-circle" style="background-color: #d35400;" onclick="changeTheme('#d35400', '#e67e22')" title="برتقالي"></span>
+            <span class="color-circle" style="background-color: #c0392b;" onclick="changeTheme('#c0392b', '#e74c3c')" title="أحمر"></span>
+            <span class="color-circle" style="background-color: #16a085;" onclick="changeTheme('#16a085', '#1abc9c')" title="تركواز"></span>
+            <span class="color-circle" style="background-color: #d4ac0d;" onclick="changeTheme('#d4ac0d', '#f1c40f')" title="ذهبي"></span>
+            <span class="color-circle" style="background-color: #34495e;" onclick="changeTheme('#34495e', '#7f8c8d')" title="رمادي"></span>
         </div>
     </div>
 
-    <button class="top-nav-item" onclick="alert('Ali And Store: متجرك المفضل لتلبية كافة احتياجاتك اليومية بأفضل الأسعار وأسرع خدمة توصيل.');">
+    <button class="top-nav-item" onclick="showToast('Ali And Store: متجرك المفضل لتلبية احتياجاتك بأفضل الأسعار.');">
         <span class="icon">ℹ️</span> عن المتجر
     </button>
 
@@ -413,6 +463,7 @@ $categories_result = $conn->query($categories_sql);
     <input type="text" id="searchInput" class="search-input" placeholder="🔍 ابحث عن أي منتج تريد..." onkeyup="filterProducts()">
 </div>
 
+<!-- عرض الأقسام والمنتجات ديناميكياً من قاعدة البيانات -->
 <div class="container">
     <?php
     if ($categories_result && $categories_result->num_rows > 0) {
@@ -488,22 +539,25 @@ $categories_result = $conn->query($categories_sql);
         <ul id="cart-items" class="cart-items-list">
             <p style="text-align:center; color:#777;">السلة فارغة حالياً.</p>
         </ul>
-        <div class="total-price">المجموع الكلي: <span id="cart-total">0</span> ليرة</div>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <button class="clear-cart-btn" onclick="clearCart()">تفريغ السلة</button>
+            <div class="total-price" style="margin:0;">المجموع: <span id="cart-total">0</span> ليرة</div>
+        </div>
 
-        <!-- قسم إدخال بيانات الزبون -->
+        <!-- قسم بيانات الزبون (مع الحفظ التلقائي) -->
         <div class="customer-form">
-            <h3>📝 أدخل معلومات التوصيل:</h3>
+            <h3>📝 معلومات التوصيل:</h3>
             <div class="form-group">
                 <label>اسم الزبون:</label>
-                <input type="text" id="custName" placeholder="أدخل اسمك الكريم">
+                <input type="text" id="custName" placeholder="أدخل اسمك الكريم" oninput="saveCustomerData()">
             </div>
             <div class="form-group">
                 <label>رقم الهاتف:</label>
-                <input type="text" id="custPhone" placeholder="أدخل رقم هاتفك">
+                <input type="text" id="custPhone" placeholder="أدخل رقم هاتفك" oninput="saveCustomerData()">
             </div>
             <div class="form-group">
                 <label>العنوان بالتفصيل:</label>
-                <textarea id="custAddress" rows="2" placeholder="المدينة، الشارع، البناء..."></textarea>
+                <textarea id="custAddress" rows="2" placeholder="المدينة، الشارع، البناء..." oninput="saveCustomerData()"></textarea>
             </div>
         </div>
 
@@ -511,9 +565,25 @@ $categories_result = $conn->query($categories_sql);
     </div>
 </div>
 
+<!-- رسالة التنبيه المؤقتة -->
+<div id="toast">رسالة تنبيه</div>
+
+
+<!-- ==========================================================
+   5. قسم البرمجة النصية (JavaScript Logic)
+   ========================================================== -->
 <script>
+// استرجاع السلة وبيانات الزبون من LocalStorage لتوفير تجربة ممتازة
 let cart = JSON.parse(localStorage.getItem('ali_store_cart')) || [];
+loadCustomerData();
 updateCartUI();
+
+function showToast(text) {
+    let toast = document.getElementById("toast");
+    toast.innerText = text;
+    toast.className = "show";
+    setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 2500);
+}
 
 function addToCart(name, price) {
     let existingItem = cart.find(item => item.name === name);
@@ -523,7 +593,7 @@ function addToCart(name, price) {
         cart.push({ name: name, price: price, quantity: 1 });
     }
     saveAndupdateCart();
-    alert("تمت إضافة " + name + " إلى السلة");
+    showToast("تمت إضافة " + name + " إلى السلة");
 }
 
 function saveAndupdateCart() {
@@ -567,6 +637,32 @@ function removeFromCart(index) {
     saveAndupdateCart();
 }
 
+function clearCart() {
+    if (confirm("هل أنت متأكد من تفريغ السلة بالكامل؟")) {
+        cart = [];
+        saveAndupdateCart();
+    }
+}
+
+// حفظ بيانات الزبون تلقائياً في ذاكرة المتصفح
+function saveCustomerData() {
+    let customer = {
+        name: document.getElementById('custName').value,
+        phone: document.getElementById('custPhone').value,
+        address: document.getElementById('custAddress').value
+    };
+    localStorage.setItem('ali_store_customer', JSON.stringify(customer));
+}
+
+function loadCustomerData() {
+    let savedCustomer = JSON.parse(localStorage.getItem('ali_store_customer'));
+    if (savedCustomer) {
+        if(document.getElementById('custName')) document.getElementById('custName').value = savedCustomer.name || '';
+        if(document.getElementById('custPhone')) document.getElementById('custPhone').value = savedCustomer.phone || '';
+        if(document.getElementById('custAddress')) document.getElementById('custAddress').value = savedCustomer.address || '';
+    }
+}
+
 function toggleCartModal() {
     let modal = document.getElementById('cartModal');
     modal.style.display = modal.style.display === 'block' ? 'none' : 'block';
@@ -588,7 +684,7 @@ function changeTheme(primary, accent) {
     document.getElementById('colorPopup').style.display = 'none';
 }
 
-// البحث الفوري عن المنتجات
+// محرك البحث الفوري
 function filterProducts() {
     let input = document.getElementById('searchInput').value.toLowerCase();
     let cards = document.querySelectorAll('.product-card');
@@ -603,6 +699,7 @@ function filterProducts() {
     });
 }
 
+// إرسال الطلب وتفاصيل الزبون عبر الواتساب
 function sendToWhatsApp() {
     if (cart.length === 0) {
         alert("السلة فارغة! قم بإضافة منتجات أولاً.");
@@ -614,7 +711,7 @@ function sendToWhatsApp() {
     let address = document.getElementById('custAddress').value.trim();
 
     if (!name || !phone || !address) {
-        alert("الرجاء تعبئة جميع بيانات الزبون (الاسم، الهاتف، والعنوان) قبل إرسال الطلب!");
+        alert("الرجاء تعبئة جميع بيانات التوصيل (الاسم، الهاتف، والعنوان) قبل الإرسال!");
         return;
     }
 
@@ -639,7 +736,7 @@ function sendToWhatsApp() {
     window.open(`https://wa.me/${phoneNumber}?text=${encodedMessage}`, '_blank');
 }
 
-// ظهور وإخفاء زر العودة للأعلى
+// زر العودة للأعلى
 window.onscroll = function() {
     let btn = document.getElementById("scrollTopBtn");
     if (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) {
@@ -653,15 +750,12 @@ function scrollToTop() {
     window.scrollTo({top: 0, behavior: 'smooth'});
 }
 
+// إغلاق النوافذ عند النقر خارجها
 window.onclick = function(event) {
     let modal = document.getElementById('cartModal');
     let menuModal = document.getElementById('menuModal');
-    if (event.target === modal) {
-        modal.style.display = 'none';
-    }
-    if (event.target === menuModal) {
-        menuModal.style.display = 'none';
-    }
+    if (event.target === modal) modal.style.display = 'none';
+    if (event.target === menuModal) menuModal.style.display = 'none';
 }
 </script>
 
