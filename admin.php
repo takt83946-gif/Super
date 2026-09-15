@@ -1,21 +1,26 @@
 <?php
 require_once 'config.php';
 
-// تحديث هيكل الجداول تلقائياً
+// تحديث هيكل الجدول وإضافة كافة الأعمدة الناقصة تلقائياً
 try {
     $conn->exec("CREATE TABLE IF NOT EXISTS products (
         id INT AUTO_INCREMENT PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
         price DECIMAL(10,2) NOT NULL,
         currency VARCHAR(10) DEFAULT '$',
-        category VARCHAR(100) NOT NULL,
+        category VARCHAR(100) DEFAULT '',
         image VARCHAR(255) DEFAULT '',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )");
 
+    // فحص وإضافة أي عمود قد يكون ناقصاً في الجدول القديم
     $columns = $conn->query("SHOW COLUMNS FROM products")->fetchAll(PDO::FETCH_COLUMN);
+    
     if (!in_array('currency', $columns)) {
         $conn->exec("ALTER TABLE products ADD COLUMN currency VARCHAR(10) DEFAULT '$'");
+    }
+    if (!in_array('category', $columns)) {
+        $conn->exec("ALTER TABLE products ADD COLUMN category VARCHAR(100) DEFAULT ''");
     }
     if (!in_array('image', $columns)) {
         $conn->exec("ALTER TABLE products ADD COLUMN image VARCHAR(255) DEFAULT ''");
@@ -32,7 +37,7 @@ try {
 
 $message = "";
 
-// معالجة إضافة منتج جديد (بشكل مضمون وبدون توقف)
+// معالجة إضافة منتج جديد
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_product'])) {
     $name = trim($_POST['name']);
     $price = floatval($_POST['price']);
@@ -40,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_product'])) {
     $category = trim($_POST['category']);
     $imagePath = "";
 
-    // محاولة رفع الصورة إن وجدت
+    // رفع الصورة بشكل اختياري آمن
     if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
         $uploadDir = 'uploads/';
         if (!is_dir($uploadDir)) {
@@ -57,7 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_product'])) {
         try {
             $stmt = $conn->prepare("INSERT INTO products (name, price, currency, category, image) VALUES (?, ?, ?, ?, ?)");
             $stmt->execute([$name, $price, $currency, $category, $imagePath]);
-            $message = "تم إضافة المنتج بنجاح وتخزينه في قاعدة البيانات! ✅";
+            $message = "تم إضافة المنتج بنجاح وتخزينه في المتجر! ✅";
         } catch(PDOException $e) {
             $message = "خطأ في قاعدة البيانات: " . $e->getMessage();
         }
@@ -81,7 +86,7 @@ if (isset($_GET['delete_product'])) {
     exit();
 }
 
-// إحصائيات المبيعات والمنتجات
+// جلب البيانات والإحصائيات
 try {
     $today = date('Y-m-d');
     $thisMonth = date('Y-m');
@@ -120,7 +125,7 @@ try {
 
     <div class="container pb-5">
         <?php if (!empty($message)): ?>
-            <div class="alert alert-warning text-center fw-bold shadow-sm"><?= htmlspecialchars($message); ?></div>
+            <div class="alert alert-success text-center fw-bold shadow-sm"><?= htmlspecialchars($message); ?></div>
         <?php endif; ?>
 
         <!-- نموذج إضافة منتج جديد -->
@@ -163,7 +168,7 @@ try {
             </div>
         </div>
 
-        <!-- إدارة المنتجات الحالية -->
+        <!-- المنتجات المخزنة حالياً -->
         <div class="card shadow-sm border-0">
             <div class="card-header bg-dark text-white fw-bold">
                 <i class="fa-solid fa-list"></i> المنتجات المخزنة حالياً (عدد: <?= count($products); ?>)
@@ -203,7 +208,7 @@ try {
                                 <?php endforeach; ?>
                             <?php else: ?>
                                 <tr>
-                                    <td colspan="5" class="text-muted py-3">لا توجد منتجات مضافة بعد. جرب إضافة منتج بالأعلى!</td>
+                                    <td colspan="5" class="text-muted py-3">لا توجد منتجات مضافة بعد.</td>
                                 </tr>
                             <?php endif; ?>
                         </tbody>
