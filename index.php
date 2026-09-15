@@ -25,6 +25,11 @@ $categories_result = $conn->query($categories_sql);
     <title>سوبرماركت الساحة</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --primary-color: #2c3e50;
+            --accent-color: #3498db;
+            --btn-cart: #27ae60;
+        }
         body {
             font-family: 'Cairo', sans-serif;
             background-color: #f8f9fa;
@@ -32,22 +37,24 @@ $categories_result = $conn->query($categories_sql);
             padding: 0;
             direction: rtl;
             text-align: right;
+            transition: background-color 0.3s;
         }
         header {
-            background-color: #2c3e50;
+            background-color: var(--primary-color);
             color: white;
             padding: 15px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
+            transition: background-color 0.3s;
         }
         header h1 {
             margin: 0;
             font-size: 24px;
         }
         .cart-icon-btn {
-            background-color: #27ae60;
+            background-color: var(--btn-cart);
             color: white;
             border: none;
             padding: 10px 20px;
@@ -56,22 +63,24 @@ $categories_result = $conn->query($categories_sql);
             font-family: 'Cairo', sans-serif;
             font-size: 16px;
             font-weight: bold;
+            transition: background-color 0.3s;
         }
         .cart-icon-btn:hover {
-            background-color: #219653;
+            opacity: 0.9;
         }
         .container {
             max-width: 1200px;
             margin: 20px auto;
             padding: 0 15px;
+            min-height: 60vh;
         }
         .category-section {
             margin-bottom: 35px;
         }
         .category-title {
             font-size: 22px;
-            color: #2c3e50;
-            border-bottom: 2px solid #3498db;
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--accent-color);
             padding-bottom: 5px;
             margin-bottom: 20px;
         }
@@ -108,7 +117,7 @@ $categories_result = $conn->query($categories_sql);
             margin-bottom: 12px;
         }
         .btn {
-            background-color: #3498db;
+            background-color: var(--accent-color);
             color: white;
             border: none;
             padding: 8px 15px;
@@ -117,11 +126,72 @@ $categories_result = $conn->query($categories_sql);
             font-family: 'Cairo', sans-serif;
             width: 100%;
             font-weight: 600;
+            transition: background-color 0.3s;
         }
         .btn:hover {
-            background-color: #2980b9;
+            opacity: 0.9;
         }
         
+        /* تصميم الفوتر السفلي المطلوب */
+        footer {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 30px 20px;
+            margin-top: 50px;
+            transition: background-color 0.3s;
+        }
+        .footer-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 25px;
+        }
+        .footer-section h3 {
+            font-size: 18px;
+            border-bottom: 2px solid var(--accent-color);
+            padding-bottom: 8px;
+            margin-bottom: 15px;
+        }
+        .footer-section ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .footer-section ul li {
+            margin-bottom: 8px;
+        }
+        .footer-section ul li a {
+            color: #ddd;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        .footer-section ul li a:hover {
+            color: white;
+            text-decoration: underline;
+        }
+        .color-options {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .color-circle {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid white;
+            display: inline-block;
+        }
+        .footer-bottom {
+            text-align: center;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            margin-top: 25px;
+            padding-top: 15px;
+            font-size: 14px;
+            color: #ccc;
+        }
+
         /* تصميم نافذة سلة المشتريات المنبثقة */
         .modal {
             display: none;
@@ -201,14 +271,12 @@ $categories_result = $conn->query($categories_sql);
 <div class="container">
     <?php
     if ($categories_result && $categories_result->num_rows > 0) {
-        // حلقة تكرارية لكل تصنيف (Category)
         while ($cat_row = $categories_result->fetch_assoc()) {
             $current_category = $cat_row['category'];
-            echo '<div class="category-section">';
+            echo '<div class="category-section" id="cat-' . md5($current_category) . '">';
             echo '<div class="category-title">' . htmlspecialchars($current_category) . '</div>';
             echo '<div class="products-grid">';
 
-            // جلب المنتجات التابعة لهذا التصنيف حصراً
             $stmt = $conn->prepare("SELECT * FROM products WHERE category = ?");
             $stmt->bind_param("s", $current_category);
             $stmt->execute();
@@ -220,7 +288,6 @@ $categories_result = $conn->query($categories_sql);
                     if (!empty($product['image'])) {
                         echo '<img src="' . htmlspecialchars($product['image']) . '" alt="' . htmlspecialchars($product['name']) . '">';
                     } else {
-                        // صورة افتراضية في حال عدم توفر صورة
                         echo '<img src="https://via.placeholder.com/150" alt="منتج">';
                     }
                     echo '<div>';
@@ -233,8 +300,8 @@ $categories_result = $conn->query($categories_sql);
             }
             $stmt->close();
 
-            echo '</div>'; // نهاية products-grid
-            echo '</div>'; // نهاية category-section
+            echo '</div>'; 
+            echo '</div>'; 
         }
     } else {
         echo '<p style="text-align:center; margin-top:50px;">لا توجد تصنيفات أو منتجات متوفرة حالياً.</p>';
@@ -242,6 +309,62 @@ $categories_result = $conn->query($categories_sql);
     $conn->close();
     ?>
 </div>
+
+<!-- الفوتر السفلي (الأقسام الأربعة المطلوبة) -->
+<footer>
+    <div class="footer-container">
+        <!-- 1. المنيو (التصنيفات) -->
+        <div class="footer-section">
+            <h3>المنيو (التصنيفات)</h3>
+            <ul>
+                <?php
+                // إعادة الاتصال لجلب التصنيفات للفوتر
+                $conn_f = new mysqli($host, $user, $pass, $dbname, (int)$port);
+                $conn_f->set_charset("utf8");
+                $cat_f_result = $conn_f->query("SELECT DISTINCT category FROM products WHERE category IS NOT NULL AND category != ''");
+                if ($cat_f_result) {
+                    while ($cf = $cat_f_result->fetch_assoc()) {
+                        echo '<li><a href="#cat-' . md5($cf['category']) . '">' . htmlspecialchars($cf['category']) . '</a></li>';
+                    }
+                }
+                $conn_f->close();
+                ?>
+            </ul>
+        </div>
+
+        <!-- 2. زر تغيير لون الموقع -->
+        <div class="footer-section">
+            <h3>تغيير لون الموقع</h3>
+            <p style="font-size: 13px; color: #ddd; margin-bottom: 8px;">اختر اللون المفضل:</p>
+            <div class="color-options">
+                <span class="color-circle" style="background-color: #2c3e50;" onclick="changeTheme('#2c3e50', '#3498db')" title="كلاسيكي داكن"></span>
+                <span class="color-circle" style="background-color: #8e44ad;" onclick="changeTheme('#8e44ad', '#9b59b6')" title="بنفسجي"></span>
+                <span class="color-circle" style="background-color: #d35400;" onclick="changeTheme('#d35400', '#e67e22')" title="برتقالي"></span>
+                <span class="color-circle" style="background-color: #16a085;" onclick="changeTheme('#16a085', '#1abc9c')" title="تركواز"></span>
+            </div>
+        </div>
+
+        <!-- 3. About الموقع -->
+        <div class="footer-section">
+            <h3>عن سوبرماركت الساحة</h3>
+            <p style="font-size: 14px; color: #ddd; line-height: 1.6;">
+                نقدم أفضل المنتجات الغذائية والاستهلاكية الطازجة بأفضل الأسعار لتلبية احتياجات عائلتك اليومية بكل سرعة وسهولة.
+            </p>
+        </div>
+
+        <!-- 4. التواصل معنا -->
+        <div class="footer-section">
+            <h3>التواصل معنا</h3>
+            <p style="font-size: 14px; color: #ddd; line-height: 1.8;">
+                📞 الهاتف / واتساب: <br>
+                <a href="https://wa.me/96181058043" target="_blank" style="color: #2ecc71; font-weight: bold; font-size: 16px;">+961 81 058 043</a>
+            </p>
+        </div>
+    </div>
+    <div class="footer-bottom">
+        جميع الحقوق محفوظة &copy; سوبرماركت الساحة 2026
+    </div>
+</footer>
 
 <!-- نافذة سلة المشتريات المنبثقة -->
 <div id="cartModal" class="modal">
@@ -311,6 +434,11 @@ function toggleCartModal() {
     modal.style.display = modal.style.display === 'block' ? 'none' : 'block';
 }
 
+function changeTheme(primary, accent) {
+    document.documentElement.style.setProperty('--primary-color', primary);
+    document.documentElement.style.setProperty('--accent-color', accent);
+}
+
 function sendToWhatsApp() {
     if (cart.length === 0) {
         alert("السلة فارغة! قم بإضافة منتجات أولاً.");
@@ -328,14 +456,12 @@ function sendToWhatsApp() {
 
     message += `\nالمجموع الكلي: ${totalPrice} ليرة`;
 
-    // استبدل الرقم أدناه برقم الواتساب الخاص بالمتجر مع رمز الدولة
-    let phoneNumber = "963000000000"; 
+    let phoneNumber = "96181058043"; 
     let encodedMessage = encodeURIComponent(message);
     
     window.open(`https://wa.me/${phoneNumber}?text=${encodedMessage}`, '_blank');
 }
 
-// إغلاق النافذة المنبثقة عند النقر خارجها
 window.onclick = function(event) {
     let modal = document.getElementById('cartModal');
     if (event.target === modal) {
