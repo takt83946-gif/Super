@@ -1,7 +1,7 @@
 <?php
 require_once 'config.php';
 
-// تحديث هيكل الجداول وإنشاؤها تلقائياً مع الحقول الجديدة
+// تحديث هيكل الجداول تلقائياً
 try {
     $conn->exec("CREATE TABLE IF NOT EXISTS products (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -13,7 +13,6 @@ try {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )");
 
-    // إضافة الأعمدة إن لم تكن موجودة مسبقاً في الجدول القديم
     $columns = $conn->query("SHOW COLUMNS FROM products")->fetchAll(PDO::FETCH_COLUMN);
     if (!in_array('currency', $columns)) {
         $conn->exec("ALTER TABLE products ADD COLUMN currency VARCHAR(10) DEFAULT '$'");
@@ -33,7 +32,7 @@ try {
 
 $message = "";
 
-// معالجة إضافة منتج جديد مع رفع الصورة
+// معالجة إضافة منتج جديد (بشكل مضمون وبدون توقف)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_product'])) {
     $name = trim($_POST['name']);
     $price = floatval($_POST['price']);
@@ -41,14 +40,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_product'])) {
     $category = trim($_POST['category']);
     $imagePath = "";
 
+    // محاولة رفع الصورة إن وجدت
     if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
         $uploadDir = 'uploads/';
         if (!is_dir($uploadDir)) {
-            mkdir($uploadDir, 0777, true);
+            @mkdir($uploadDir, 0777, true);
         }
-        $imageName = time() . '_' . basename($_FILES['image']['name']);
+        $imageName = time() . '_' . preg_replace("/[^a-zA-Z0-9\._-]/", "", basename($_FILES['image']['name']));
         $targetFile = $uploadDir . $imageName;
-        if (move_uploaded_file($_FILES['image']['tmp_name'], $targetFile)) {
+        if (@move_uploaded_file($_FILES['image']['tmp_name'], $targetFile)) {
             $imagePath = $targetFile;
         }
     }
@@ -57,12 +57,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_product'])) {
         try {
             $stmt = $conn->prepare("INSERT INTO products (name, price, currency, category, image) VALUES (?, ?, ?, ?, ?)");
             $stmt->execute([$name, $price, $currency, $category, $imagePath]);
-            $message = "تم إضافة المنتج بنجاح!";
+            $message = "تم إضافة المنتج بنجاح وتخزينه في قاعدة البيانات! ✅";
         } catch(PDOException $e) {
-            $message = "خطأ في الإضافة: " . $e->getMessage();
+            $message = "خطأ في قاعدة البيانات: " . $e->getMessage();
         }
     } else {
-        $message = "الرجاء إدخال اسم وسعر صحيحين.";
+        $message = "الرجاء التأكد من إدخال اسم المنتج والسعر بشكل صحيح.";
     }
 }
 
@@ -73,7 +73,7 @@ if (isset($_GET['delete_product'])) {
     $stmt->execute([$id]);
     $prod = $stmt->fetch();
     if ($prod && !empty($prod['image']) && file_exists($prod['image'])) {
-        unlink($prod['image']);
+        @unlink($prod['image']);
     }
     $stmt = $conn->prepare("DELETE FROM products WHERE id = ?");
     $stmt->execute([$id]);
@@ -81,7 +81,7 @@ if (isset($_GET['delete_product'])) {
     exit();
 }
 
-// إحصائيات المبيعات
+// إحصائيات المبيعات والمنتجات
 try {
     $today = date('Y-m-d');
     $thisMonth = date('Y-m');
@@ -105,7 +105,7 @@ try {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة التحكم الشاملة - المتجر</title>
+    <title>لوحة التحكم - إدارة المتجر</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
@@ -120,107 +120,58 @@ try {
 
     <div class="container pb-5">
         <?php if (!empty($message)): ?>
-            <div class="alert alert-info text-center fw-bold"><?= htmlspecialchars($message); ?></div>
+            <div class="alert alert-warning text-center fw-bold shadow-sm"><?= htmlspecialchars($message); ?></div>
         <?php endif; ?>
 
-        <div class="row g-3 mb-4">
-            <div class="col-6">
-                <div class="card bg-primary text-white shadow-sm border-0 text-center p-3">
-                    <h6 class="text-white-50"><i class="fa-solid fa-calendar-day"></i> مبيعات اليوم</h6>
-                    <h3 class="fw-bold mb-0"><?= $salesToday; ?> طلب</h3>
-                </div>
-            </div>
-            <div class="col-6">
-                <div class="card bg-success text-white shadow-sm border-0 text-center p-3">
-                    <h6 class="text-white-50"><i class="fa-solid fa-calendar-alt"></i> مبيعات هذا الشهر</h6>
-                    <h3 class="fw-bold mb-0"><?= $salesMonth; ?> طلب</h3>
-                </div>
-            </div>
-        </div>
-
+        <!-- نموذج إضافة منتج جديد -->
         <div class="card shadow-sm border-0 mb-4">
-            <div class="card-header bg-dark text-white fw-bold">
-                <i class="fa-solid fa-plus-circle"></i> إضافة منتج جديد (صورة + سعر بالدولار أو الليرة)
+            <div class="card-header bg-success text-white fw-bold">
+                <i class="fa-solid fa-plus-circle"></i> إضافة منتج جديد للمتجر
             </div>
             <div class="card-body">
                 <form method="POST" enctype="multipart/form-data">
                     <div class="mb-3">
-                        <label class="form-label">اسم المنتج</label>
-                        <input type="text" name="name" class="form-control" required placeholder="مثال: آيفون 15 برو">
+                        <label class="form-label fw-bold">اسم المنتج</label>
+                        <input type="text" name="name" class="form-control" required placeholder="مثال: آيفون 15 برو ماكس">
                     </div>
                     <div class="row g-2 mb-3">
                         <div class="col-8">
-                            <label class="form-label">السعر</label>
-                            <input type="number" step="0.01" name="price" class="form-control" required placeholder="مثال: 500 أو 4500000">
+                            <label class="form-label fw-bold">السعر</label>
+                            <input type="number" step="0.01" name="price" class="form-control" required placeholder="مثال: 950 أو 8500000">
                         </div>
                         <div class="col-4">
-                            <label class="form-label">العملة</label>
+                            <label class="form-label fw-bold">العملة</label>
                             <select name="currency" class="form-select">
                                 <option value="$">دولار ($)</option>
-                                <option value="L.L">ليرة لبناني (L.L)</option>
+                                <option value="L.L">ليرة (L.L)</option>
                             </select>
                         </div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">القسم</label>
+                        <label class="form-label fw-bold">القسم</label>
                         <select name="category" class="form-select">
                             <option value="هواتف ذكية">هواتف ذكية</option>
                             <option value="إكسسوارات">إكسسوارات</option>
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">صورة المنتج (من الهاتف)</label>
+                        <label class="form-label">صورة المنتج (اختياري)</label>
                         <input type="file" name="image" class="form-control" accept="image/*">
                     </div>
-                    <button type="submit" name="add_product" class="btn btn-success w-100 fw-bold py-2">حفظ ونشر المنتج</button>
+                    <button type="submit" name="add_product" class="btn btn-primary w-100 fw-bold py-2">حفظ ونشر المنتج في المتجر 🚀</button>
                 </form>
             </div>
         </div>
 
-        <div class="card shadow-sm border-0 mb-4">
-            <div class="card-header bg-secondary text-white fw-bold">
-                <i class="fa-solid fa-shopping-bag"></i> أحدث طلبات الزبائن
+        <!-- إدارة المنتجات الحالية -->
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-dark text-white fw-bold">
+                <i class="fa-solid fa-list"></i> المنتجات المخزنة حالياً (عدد: <?= count($products); ?>)
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
                     <table class="table table-striped mb-0 text-center align-middle">
                         <thead class="table-light">
-                            <tr>
-                                <th>رقم الطلب</th>
-                                <th>اسم المنتج المطلُوب</th>
-                                <th>السعر</th>
-                                <th>التاريخ والوقت</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php if (count($orders) > 0): ?>
-                                <?php foreach ($orders as $ord): ?>
-                                    <tr>
-                                        <td>#<?= $ord['id']; ?></td>
-                                        <td class="fw-bold"><?= htmlspecialchars($ord['product_name']); ?></td>
-                                        <td class="text-success fw-bold"><?= htmlspecialchars($ord['total_price']); ?></td>
-                                        <td class="small text-muted"><?= $ord['order_date']; ?></td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            <?php else: ?>
-                                <tr>
-                                    <td colspan="4" class="text-muted py-3">لا توجد طلبات مسجلة حتى الآن.</td>
-                                </tr>
-                            <?php endif; ?>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <div class="card shadow-sm border-0">
-            <div class="card-header bg-primary text-white fw-bold">
-                <i class="fa-solid fa-list"></i> إدارة المنتجات الحالية
-            </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-striped mb-0 text-center align-middle">
-                        <thead class="table-dark">
                             <tr>
                                 <th>الصورة</th>
                                 <th>الاسم</th>
@@ -252,7 +203,7 @@ try {
                                 <?php endforeach; ?>
                             <?php else: ?>
                                 <tr>
-                                    <td colspan="5" class="text-muted py-3">لا توجد منتجات مضافة حالياً.</td>
+                                    <td colspan="5" class="text-muted py-3">لا توجد منتجات مضافة بعد. جرب إضافة منتج بالأعلى!</td>
                                 </tr>
                             <?php endif; ?>
                         </tbody>
