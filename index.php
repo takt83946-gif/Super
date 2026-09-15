@@ -1,13 +1,13 @@
 <?php
 require_once 'config.php';
 
-// جلب الأقسام والمنتجات
+// جلب المنتجات والأقسام
 try {
-    $products =$conn->query("SELECT * FROM products ORDER BY id DESC")->fetchAll(PDO::FETCH_ASSOC);
-    // جلب الأقسام الفريدة للمتجر
-    $categories =$conn->query("SELECT DISTINCT category FROM products WHERE category != ''")->fetchAll(PDO::FETCH_COLUMN);
+    $products = $conn->query("SELECT * FROM products ORDER BY id DESC")->fetchAll(PDO::FETCH_ASSOC);
+    $categories = $conn->query("SELECT DISTINCT category FROM products WHERE category != ''")->fetchAll(PDO::FETCH_COLUMN);
 } catch(PDOException $e) {
-    $products = [];$categories = [];
+    $products = [];
+    $categories = [];
 }
 ?>
 <!DOCTYPE html>
@@ -22,11 +22,10 @@ try {
     <style>
         body {
             font-family: 'Cairo', sans-serif;
-            background-color: #f7f7f7;
+            background-color: #f8f9fa;
             color: #111;
-            padding-bottom: 70px; /* مساحة للشريط السفلي للجوال */
+            padding-bottom: 75px; /* مساحة للشريط السفلي للجوال */
         }
-        /* الهيدر العلوي */
         .main-header {
             background: #ffffff;
             border-bottom: 1px solid #e5e7eb;
@@ -36,87 +35,60 @@ try {
         }
         .logo-text {
             font-weight: 900;
-            font-size: 1.5rem;
+            font-size: 1.4rem;
             color: #000;
             text-decoration: none;
-            letter-spacing: -0.5px;
         }
         .logo-text span {
-            color: #2563eb;
+            color: #4f46e5;
         }
-        /* شريط البحث */
-        .search-box {
-            background: #f3f4f6;
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
+        .search-container {
+            background: #f1f5f9;
+            border-radius: 10px;
             padding: 8px 15px;
+            border: 1px solid #e2e8f0;
         }
-        .search-box input {
+        .search-container input {
             border: none;
             background: transparent;
             outline: none;
             width: 100%;
             font-size: 0.9rem;
         }
-        /* القائمة الجانبية الأنيقة Offcanvas */
-        .offcanvas-header {
-            background: #111;
-            color: #fff;
-        }
-        .offcanvas-body {
-            background: #fff;
-            padding: 0;
-        }
-        .menu-item-link {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 15px 20px;
-            color: #334155;
-            text-decoration: none;
-            border-bottom: 1px solid #f1f5f9;
-            font-weight: 600;
-            transition: background 0.2s;
-        }
-        .menu-item-link:hover {
-            background: #f8fafc;
-            color: #2563eb;
-        }
-        /* بطاقات المنتجات */
         .product-card {
             background: #fff;
-            border: 1px solid #e5e7eb;
+            border: 1px solid #e2e8f0;
             border-radius: 12px;
             overflow: hidden;
-            transition: transform 0.2s, box-shadow 0.2s;
+            transition: all 0.2s ease;
             height: 100%;
         }
         .product-card:hover {
-            transform: translateY(-4px);
             box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+            transform: translateY(-3px);
         }
-        .product-img-wrap {
+        .product-img-box {
             height: 160px;
-            background: #f9fafb;
+            background: #f8fafc;
             position: relative;
             display: flex;
             align-items: center;
             justify-content: center;
             overflow: hidden;
         }
-        .product-img-wrap img {
+        .product-img-box img {
             width: 100%;
             height: 100%;
             object-fit: cover;
         }
-        .wishlist-btn {
+        .wish-btn {
             position: absolute;
             top: 10px;
             left: 10px;
             background: #fff;
             border: none;
-            width: 32px;
-            height: 32px;
+            width: 30px;
+            height: 30px;
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -128,16 +100,16 @@ try {
             font-size: 0.95rem;
             font-weight: 700;
             color: #1e293b;
-            margin-bottom: 6px;
+            margin-bottom: 4px;
         }
         .product-price {
             font-size: 1.1rem;
             font-weight: 800;
             color: #059669;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
         }
-        .btn-select-options {
-            background: #1e293b;
+        .btn-order {
+            background: #0f172a;
             color: #fff;
             border-radius: 8px;
             font-weight: 600;
@@ -146,22 +118,44 @@ try {
             width: 100%;
             border: none;
             transition: background 0.2s;
+            text-decoration: none;
+            display: block;
+            text-align: center;
         }
-        .btn-select-options:hover {
+        .btn-order:hover {
             background: #25d366; /* يتحول لأخضر الواتساب عند اللمس */
             color: #fff;
         }
-        /* شريط التنقل السفلي للجوال (Bottom Navigation Bar) مطابق للفيديو */
+        /* القائمة الجانبية */
+        .offcanvas-header-custom {
+            background: #0f172a;
+            color: #fff;
+        }
+        .menu-link {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 20px;
+            color: #334155;
+            text-decoration: none;
+            border-bottom: 1px solid #f1f5f9;
+            font-weight: 600;
+        }
+        .menu-link:hover {
+            background: #f8fafc;
+            color: #4f46e5;
+        }
+        /* شريط التنقل السفلي الثابت */
         .bottom-nav {
             position: fixed;
             bottom: 0;
             left: 0;
             right: 0;
             background: #ffffff;
-            border-top: 1px solid #e5e7eb;
+            border-top: 1px solid #e2e8f0;
             display: flex;
             justify-content: space-around;
-            padding: 10px 0;
+            padding: 8px 0;
             z-index: 1030;
             box-shadow: 0 -2px 10px rgba(0,0,0,0.03);
         }
@@ -169,18 +163,18 @@ try {
             color: #64748b;
             text-decoration: none;
             text-align: center;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             font-weight: 600;
             display: flex;
             flex-direction: column;
             align-items: center;
         }
         .bottom-nav-item i {
-            font-size: 1.25rem;
-            margin-bottom: 3px;
+            font-size: 1.2rem;
+            margin-bottom: 2px;
         }
         .bottom-nav-item.active, .bottom-nav-item:hover {
-            color: #2563eb;
+            color: #4f46e5;
         }
     </style>
 </head>
@@ -188,7 +182,7 @@ try {
 
     <header class="main-header py-2">
         <div class="container d-flex align-items-center justify-content-between">
-            <button class="btn border-0 p-0 fs-4 text-dark" type="button" data-bs-toggle="offcanvas" data-bs-target="#mainMenu">
+            <button class="btn border-0 p-0 fs-4 text-dark" type="button" data-bs-toggle="offcanvas" data-bs-target="#menuSidebar">
                 <i class="fa-solid fa-bars"></i>
             </button>
 
@@ -197,46 +191,46 @@ try {
             </a>
 
             <div class="d-flex align-items-center gap-3">
-                <a href="admin.php" class="text-dark fs-5" title="لوحة التحكم"><i class="fa-solid fa-gauge"></i></a>
+                <a href="admin.php" class="text-dark fs-5"><i class="fa-solid fa-gauge"></i></a>
             </div>
         </div>
     </header>
 
     <div class="container mt-3">
-        <div class="search-box d-flex align-items-center">
+        <div class="search-container d-flex align-items-center">
             <i class="fa-solid fa-magnifying-glass text-muted me-2"></i>
             <input type="text" id="searchInput" placeholder="ابحث عن المنتجات...">
         </div>
     </div>
 
     <div class="container my-4">
-        <h4 class="fw-bold mb-3" id="sectionTitle">أحدث المنتجات</h4>
+        <h4 class="fw-bold mb-3" id="pageTitle">أحدث المنتجات</h4>
 
         <div class="row g-3" id="productsGrid">
             <?php if (count($products) > 0): ?>
-                <?php foreach ($products as$row): ?>
+                <?php foreach ($products as $row): ?>
                     <?php 
-                        $whatsappMessage = "مرحباً Alind Store، أريد طلب المنتج: *{$row['name']}* بسعر: {$row['price']} {$row['currency']}";
+                        $whatsappMessage = "مرحباً Alind Store، أود طلب المنتج: *{$row['name']}* بسعر: {$row['price']} {$row['currency']}";
                         $whatsappUrl = "https://wa.me/96181058043?text=" . urlencode($whatsappMessage);
                     ?>
                     <div class="col-6 col-md-4 col-lg-3 product-item" data-name="<?= htmlspecialchars($row['name']); ?>" data-category="<?= htmlspecialchars($row['category']); ?>">
                         <div class="product-card d-flex flex-column p-2">
-                            <div class="product-img-wrap rounded">
+                            <div class="product-img-box rounded">
                                 <?php if (!empty($row['image']) && file_exists($row['image'])): ?>
                                     <img src="<?= $row['image']; ?>" alt="product">
                                 <?php else: ?>
                                     <i class="fa-solid fa-box fa-2x text-muted opacity-25"></i>
                                 <?php endif; ?>
-                                <button class="wishlist-btn"><i class="fa-regular fa-heart"></i></button>
+                                <button class="wish-btn" onclick="alert('تمت الإضافة للمفضلة')"><i class="fa-regular fa-heart"></i></button>
                             </div>
 
                             <div class="card-body p-2 d-flex flex-column flex-grow-1">
-                                <span class="text-muted small mb-1"><?= htmlspecialchars($row['category']); ?></span>
+                                <span class="text-muted" style="font-size: 11px;"><?= htmlspecialchars($row['category']); ?></span>
                                 <h6 class="product-title text-truncate"><?= htmlspecialchars($row['name']); ?></h6>
-                                <div class="product-price mt-auto"><?= number_format($row['price'], 2) . ' ' .$row['currency']; ?></div>
+                                <div class="product-price mt-auto"><?= $row['price'] . ' ' . $row['currency']; ?></div>
                                 
-                                <a href="<?= $whatsappUrl; ?>" target="_blank" class="btn-select-options text-center text-decoration-none">
-                                    <i class="fa-brands fa-whatsapp me-1"></i> اطلب الآن
+                                <a href="<?= $whatsappUrl; ?>" target="_blank" class="btn-order">
+                                    <i class="fa-brands fa-whatsapp"></i> اطلب الآن
                                 </a>
                             </div>
                         </div>
@@ -244,37 +238,37 @@ try {
                 <?php endforeach; ?>
             <?php else: ?>
                 <div class="col-12 text-center py-5">
-                    <p class="text-muted">لا توجد منتجات مضافة حالياً. أضفها من <a href="admin.php">لوحة التحكم</a>.</p>
+                    <p class="text-muted">لا توجد منتجات مضافة حالياً. قم بإضافتها من <a href="admin.php">لوحة التحكم</a>.</p>
                 </div>
             <?php endif; ?>
         </div>
     </div>
 
-    <div class="offcanvas offcanvas-start" tabindex="-1" id="mainMenu">
-        <div class="offcanvas-header">
+    <div class="offcanvas offcanvas-start" tabindex="-1" id="menuSidebar">
+        <div class="offcanvas-header offcanvas-header-custom">
             <h5 class="offcanvas-title fw-bold"><i class="fa-solid fa-bars me-2"></i> القائمة</h5>
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
         </div>
-        <div class="offcanvas-body">
-            <a href="index.php" class="menu-item-link">
+        <div class="offcanvas-body p-0">
+            <a href="index.php" class="menu-link">
                 <span><i class="fa-solid fa-house me-2 text-primary"></i> الرئيسية</span>
                 <i class="fa-solid fa-chevron-left text-muted small"></i>
             </a>
-            <a href="admin.php" class="menu-item-link">
-                <span><i class="fa-solid fa-gauge me-2 text-warning"></i> لوحة التحكم</span>
+            <a href="admin.php" class="menu-link">
+                <span><i class="fa-solid fa-gauge me-2 text-warning"></i> لوحة التحكم والإدارة</span>
                 <i class="fa-solid fa-chevron-left text-muted small"></i>
             </a>
-            <hr class="text-muted my-2">
-            <div class="px-3 py-2 text-muted fw-bold small">الأقسام المتوفرة:</div>
+            <hr class="my-2 text-muted">
+            <div class="px-3 py-2 text-muted fw-bold" style="font-size: 0.85rem;">الأقسام المتوفرة:</div>
             <?php if (!empty($categories)): ?>
-                <?php foreach($categories as$cat): ?>
-                    <a href="#" class="menu-item-link category-filter" data-category="<?= htmlspecialchars($cat); ?>" data-bs-dismiss="offcanvas">
+                <?php foreach($categories as $cat): ?>
+                    <a href="#" class="menu-link category-filter" data-category="<?= htmlspecialchars($cat); ?>" data-bs-dismiss="offcanvas">
                         <span><i class="fa-solid fa-tag me-2 text-secondary"></i> <?= htmlspecialchars($cat); ?></span>
                         <i class="fa-solid fa-chevron-left text-muted small"></i>
                     </a>
                 <?php endforeach; ?>
             <?php else: ?>
-                <div class="px-3 text-muted small">لا توجد أقسام مضافة بعد</div>
+                <div class="px-3 text-muted small">لا توجد أقسام حالياً</div>
             <?php endif; ?>
         </div>
     </div>
@@ -303,7 +297,6 @@ try {
     </nav>
 
     <script>
-        // البحث الفوري
         document.getElementById('searchInput').addEventListener('keyup', function() {
             let filter = this.value.toLowerCase();
             let items = document.querySelectorAll('.product-item');
@@ -313,9 +306,20 @@ try {
             });
         });
 
-        // تصفية حسب القسم عند النقر في القائمة الجانبية
         document.querySelectorAll('.category-filter').forEach(function(link) {
             link.addEventListener('click', function(e) {
                 e.preventDefault();
                 let selectedCat = this.getAttribute('data-category');
-                document.getElementById('sectionTitle').innerText = "قسم: " +
+                document.getElementById('pageTitle').innerText = "قسم: " + selectedCat;
+                let items = document.querySelectorAll('.product-item');
+                items.forEach(function(item) {
+                    let cat = item.getAttribute('data-category');
+                    item.style.display = (cat === selectedCat) ? "" : "none";
+                });
+            });
+        });
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
