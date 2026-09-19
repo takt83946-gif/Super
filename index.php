@@ -1,6 +1,6 @@
 <?php
 /* ==========================================================
-   1. الاتصال بقاعدة البيانات ومعالجة إرسال الإعلانات والباقات (Wish Money)
+   Ali And Store - Index File with WPAY & Bento Grid Ads
    ========================================================== */
 $host = getenv('MYSQLHOST') ?: "localhost";
 $user = getenv('MYSQLUSER') ?: "root";
@@ -14,7 +14,7 @@ if ($conn->connect_error) {
 }
 $conn->set_charset("utf8");
 
-// إنشاء أو تحديث جدول الإعلانات ليدعم الباقات والمبلغ ورقم السند
+// إنشاء جدول الإعلانات إن لم يكن موجوداً
 $conn->query("CREATE TABLE IF NOT EXISTS customer_ads (
     id INT AUTO_INCREMENT PRIMARY KEY,
     customer_name VARCHAR(100) NOT NULL,
@@ -24,34 +24,12 @@ $conn->query("CREATE TABLE IF NOT EXISTS customer_ads (
     image_url VARCHAR(255),
     package_type INT DEFAULT 1,
     amount_paid DECIMAL(5,2) DEFAULT 1.00,
-    wish_ref VARCHAR(100) NOT NULL,
+    wish_ref VARCHAR(100) DEFAULT 'PENDING_WPAY',
     status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 )");
 
-$toast_message = "";
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'submit_ad') {
-    $cust_name = trim($_POST['ad_name'] ?? '');
-    $cust_phone = trim($_POST['ad_phone'] ?? '');
-    $ad_title = trim($_POST['ad_title'] ?? '');
-    $ad_desc = trim($_POST['ad_desc'] ?? '');
-    $package_type = intval($_POST['ad_package'] ?? 1);
-    $amount_paid = ($package_type === 15) ? 10.00 : 1.00;
-    $wish_ref = trim($_POST['wish_ref'] ?? '');
-    $image_url = trim($_POST['ad_image'] ?? '');
-
-    if ($cust_name && $cust_phone && $ad_title && $wish_ref) {
-        $stmt = $conn->prepare("INSERT INTO customer_ads (customer_name, phone, title, description, image_url, package_type, amount_paid, wish_ref, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending')");
-        $stmt->bind_param("sssssids", $cust_name, $cust_phone, $ad_title, $ad_desc, $image_url, $package_type, $amount_paid, $wish_ref);
-        if ($stmt->execute()) {
-            $toast_message = "تم إرسال إعلانك ($amount_paid$) بنجاح! سيتم نشره بعد التحقق من سند الـ Wish ✅";
-        }
-        $stmt->close();
-    } else {
-        $toast_message = "الرجاء تعبئة الحقول الأساسية ورقم سند Wish!";
-    }
-}
-
+$toast_message = isset($_GET['msg']) ? htmlspecialchars($_GET['msg']) : "";
 $categories_sql = "SELECT DISTINCT category FROM products WHERE category IS NOT NULL AND category != ''";
 $categories_result = $conn->query($categories_sql);
 ?>
@@ -140,7 +118,7 @@ $categories_result = $conn->query($categories_sql);
 <body>
 
 <div class="announcement-bar">
-    <marquee behavior="scroll" direction="right">🔥 أهلاً بكم في Ali And Store - تسوق مباشرة أو أضف إعلانك (إعلان 1$ | 15 إعلان بـ 10$) عبر Wish Money! 🔥</marquee>
+    <marquee behavior="scroll" direction="right">🔥 أهلاً بكم في Ali And Store - تسوق مباشرة أو أضف إعلانك (إعلان 1$ | 15 إعلان بـ 10$) عبر ⚡ WPAY! 🔥</marquee>
 </div>
 
 <header>
@@ -265,30 +243,33 @@ $categories_result = $conn->query($categories_sql);
     </div>
 </div>
 
-<!-- Modal إضافة إعلان مع اختيار الباقة والدفع Wish Money -->
+<!-- Modal إضافة إعلان مع اختيار الباقة والتوجيه لـ WPAY -->
 <div id="adModal" class="modal">
     <div class="modal-content">
         <span class="close-btn" onclick="toggleAdModal()">&times;</span>
         <h2 style="color:var(--primary-color); margin-top:0;">📢 إضافة إعلان جديد</h2>
-        <div class="wish-box">
-            <b>💳 اختيار الباقة:</b><br>
-            <label style="cursor:pointer;"><input type="radio" name="ad_package" value="1" data-price="1.00" checked onchange="updatePriceForm()"> إعلان واحد (1$)</label><br>
-            <label style="cursor:pointer;"><input type="radio" name="ad_package" value="15" data-price="10.00" onchange="updatePriceForm()"> باقة 15 إعلاناً (10$)</label>
-            <div style="margin-top:8px; border-top:1px dashed #1abc9c; padding-top:6px;">
-                المبلغ المطلوب تحويله لـ Wish: <strong id="adPriceDisplay" style="color:#d35400;">1$</strong><br>
-                رقم Wish: <b>03-000000 (Ali Store)</b>
-            </div>
-        </div>
-        <form method="POST" id="adFormElement">
+        <form id="adFormElement" action="init_wpay.php" method="POST">
             <input type="hidden" name="action" value="submit_ad">
             <input type="hidden" name="ad_package" id="selectedPackageInput" value="1">
+            
             <div class="form-group"><label>اسم المعلن:</label><input type="text" name="ad_name" required></div>
-            <div class="form-group"><label>رقم الهاتف (للتواصل معي):</label><input type="text" name="ad_phone" placeholder="مثال: 96170123456" required></div>
+            <div class="form-group"><label>رقم الهاتف (واتساب):</label><input type="text" name="ad_phone" placeholder="96170123456" required></div>
             <div class="form-group"><label>عنوان الإعلان:</label><input type="text" name="ad_title" required></div>
             <div class="form-group"><label>وصف الإعلان:</label><textarea name="ad_desc" rows="3"></textarea></div>
             <div class="form-group"><label>رابط الصورة (اختياري):</label><input type="url" name="ad_image" placeholder="https://..."></div>
-            <div class="form-group"><label>رقم سند تحويل Wish:</label><input type="text" name="wish_ref" required></div>
-            <button type="submit" class="btn" style="background:#27ae60; margin-top:10px; width:100%;">إرسال الإعلان للمراجعة</button>
+            
+            <div class="wish-box" style="margin: 12px 0;">
+                <b>💳 اختيار باقة الإعلانات عبر ⚡ WPAY:</b><br>
+                <label style="cursor:pointer;"><input type="radio" name="ad_package_choice" value="1" data-price="1.00" checked onchange="syncPackage(this)"> إعلان واحد (1$)</label><br>
+                <label style="cursor:pointer;"><input type="radio" name="ad_package_choice" value="15" data-price="10.00" onchange="syncPackage(this)"> باقة 15 إعلاناً (10$)</label>
+                <div style="margin-top:8px; border-top:1px dashed #1abc9c; padding-top:6px;">
+                    المبلغ الإجمالي للدفع: <strong id="adPriceDisplay" style="color:#d35400; font-size:16px;">1$</strong>
+                </div>
+            </div>
+
+            <button type="submit" class="btn" style="background:#e74c3c; margin-top:10px; width:100%;">
+                <span style="font-weight:bold;">متابعة الدفع عبر ⚡ WPAY</span>
+            </button>
         </form>
     </div>
 </div>
@@ -307,10 +288,9 @@ function toggleMenuModal() { let m = document.getElementById('menuModal'); m.sty
 function toggleColorPopup() { let p = document.getElementById('colorPopup'); p.style.display = p.style.display === 'flex' ? 'none' : 'flex'; }
 function changeTheme(p, a) { document.documentElement.style.setProperty('--primary-color', p); document.documentElement.style.setProperty('--accent-color', a); document.getElementById('colorPopup').style.display='none'; }
 
-function updatePriceForm() {
-    let selected = document.querySelector('input[name="ad_package"]:checked');
-    let price = selected.getAttribute('data-price');
-    let val = selected.value;
+function syncPackage(radio) {
+    let price = radio.getAttribute('data-price');
+    let val = radio.value;
     document.getElementById('adPriceDisplay').innerText = price + '$';
     document.getElementById('selectedPackageInput').value = val;
 }
