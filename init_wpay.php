@@ -1,73 +1,43 @@
 <?php
-require_once 'config.php';
-session_start();
+// init_wpay.php
+require_once 'config.php'; // أو إعدادات الاتصال بقاعدة البيانات
+
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $cust_name = trim($_POST['ad_name'] ?? '');
     $cust_phone = trim($_POST['ad_phone'] ?? '');
     $ad_title = trim($_POST['ad_title'] ?? '');
     $ad_desc = trim($_POST['ad_desc'] ?? '');
-    $image_url = trim($_POST['ad_image'] ?? '');
     $package_type = intval($_POST['ad_package'] ?? 1);
     $amount_paid = ($package_type === 15) ? 10.00 : 1.00;
+    $image_url = trim($_POST['ad_image'] ?? '');
 
-    // 1. حفظ الطلب مؤقتاً في قاعدة البيانات بحالة غير مدفوع (unpaid)
-    $stmt = $conn->prepare("INSERT INTO customer_ads (customer_name, phone, title, description, image_url, package_type, amount_paid, wish_ref, status) VALUES (?, ?, ?, ?, ?, ?, ?, 'PENDING_WPAY', 'pending')");
-    $stmt->bind_param("sssssids", $cust_name, $cust_phone, $ad_title, $ad_desc, $image_url, $package_type, $amount_paid);
-    
-    if (!$stmt->execute()) {
-        die("خطأ في قاعدة البيانات: " . $stmt->error);
-    }
-    $order_id = $conn->insert_id;
+    // 1. حفظ الطلب مؤقتاً بحالة pending في قاعدة البيانات للحصول على ID
+    $stmt = $conn->prepare("INSERT INTO customer_ads (customer_name, phone, title, description, image_url, package_type, amount_paid, wish_ref, status) VALUES (?, ?, ?, ?, ?, ?, ?, 'WPAY_ONLINE', 'pending')");
+    $stmt->bind_param("sssssid", $cust_name, $cust_phone, $ad_title, $ad_desc, $image_url, $package_type, $amount_paid);
+    $stmt->execute();
+    $order_id = $stmt->insert_id;
     $stmt->close();
 
-    // 2. إعداد بيانات الطلب لـ WPAY API (cURL)
-    $callback_url = "https://yourdomain.com/wpay_callback.php?order_id=" . $order_id;
-    $return_url = "https://yourdomain.com/thankyou.php?order_id=" . $order_id;
-
-    $payload = [
-        "merchant_id" => WPAY_MERCHANT_ID,
-        "amount" => $amount_paid,
-        "currency" => "USD",
-        "order_reference" => "AD_ORDER_" . $order_id,
-        "customer_phone" => $cust_phone,
-        "callback_url" => $callback_url,
-        "return_url" => $return_url
-    ];
-
-    // توليد التوقيع إن وجد (signature/hash حسب توثيق Whish)
-    // $signature = hash_hmac('sha256', json_encode($payload), WPAY_SECRET_KEY);
-
-    // 3. تنفيذ طلب cURL لـ Whish Pay
-    $ch = curl_init(WPAY_API_URL);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_POST, true);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
-    curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        'Content-Type: application/json',
-        'Authorization: Bearer ' . WPAY_SECRET_KEY
-    ]);
+    // 2. بيانات الاتصال بـ WPAY API (ضع بيانات التاجر الحقيقية هنا أو استدعها من config)
+    $merchant_id = "YOUR_MERCHANT_ID"; 
+    $api_key = "YOUR_API_KEY";
     
-    $response = curl_exec($ch);
-    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
+    // روابط العودة إلى موقعك على Railway
+    $base_url = "https://" . $_SERVER['HTTP_HOST'];
+    $return_url = $base_url . "/wpay_success.php?order_id=" . $order_id;
+    $cancel_url = $base_url . "/index.php?msg=" . urlencode("تم إلغاء عملية الدفع.");
 
-    $res_data = json_decode($response, true);
+    // (ملاحظة: إذا كنت تستخدم مكتبة أو رابط API الخاص بـ Whish Pay، يتم إرسال الطلب هنا عبر cURL والحصول على payment_url)
+    // كمثال، إذا كان لديك رابط الدفع جاهزاً، قم بالتوجيه إليه مباشرة:
+    
+    /* مثال على اتصال cURL مع Whish Pay API:
+       $payload = json_encode(['amount' => $amount_paid, 'currency' => 'USD', 'return_url' => $return_url, ...]);
+       // إرسال الطلب واستقبال رابط الـ Whish
+    */
 
-    // 4. التوجيه لصفحة دفع WPAY التي تظهر في صورتك
-    // إذا وفر الـ API رابط إعادة توجيه (redirect_url / payment_url):
-    if (isset($res_data['payment_url']) && !empty($res_data['payment_url'])) {
-        header("Location: " . $res_data['payment_url']);
-        exit();
-    } else {
-        // في حال اختبار محلي أو لم يتوفر رابط ديناميكي فوري من الـ Sandbox، توجيه تجريبي أو إظهار خطأ
-        // للتجربة المباشرة أو إذا كان الـ API يعيد رابط افتراضي:
-        echo "<div style='font-family:Cairo; direction:rtl; text-align:center; margin-top:50px;'>";
-        echo "<h3>تم إنشاء الطلب رقم #$order_id بنجاح</h3>";
-        echo "<p>المبلغ المطلوب: <b>$amount_paid USD</b></p>";
-        echo "<p style='color:red;'>ملاحظة: تأكد من تفعيل بيانات الـ Merchant ID الخاصة بك من Whish Pay لتوليد رابط WPay الفعلّي.</p>";
-        echo "<a href='index.php' style='display:inline-block; margin-top:20px; padding:10px 20px; background:#2c3e50; color:#fff; text-decoration:none; border-radius:5px;'>العودة للمتجر</a>";
-        echo "</div>";
-    }
+    // إذا كان الرابط يفتح مباشرة كما في صورتك، تأكد أن الـ return_url يوجه إلى wpay_success.php
 }
-$conn->close();
+?>
