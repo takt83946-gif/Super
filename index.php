@@ -1,6 +1,6 @@
 <?php
 /* ==========================================================
-   Ali And Store - Index File with WPAY & Bento Grid Ads
+   Ali And Store - Index File (Stable Wish Money Receipt Version)
    ========================================================== */
 $host = getenv('MYSQLHOST') ?: "localhost";
 $user = getenv('MYSQLUSER') ?: "root";
@@ -24,12 +24,34 @@ $conn->query("CREATE TABLE IF NOT EXISTS customer_ads (
     image_url VARCHAR(255),
     package_type INT DEFAULT 1,
     amount_paid DECIMAL(5,2) DEFAULT 1.00,
-    wish_ref VARCHAR(100) DEFAULT 'PENDING_WPAY',
+    wish_ref VARCHAR(100) NOT NULL,
     status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 )");
 
-$toast_message = isset($_GET['msg']) ? htmlspecialchars($_GET['msg']) : "";
+$toast_message = "";
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'submit_ad') {
+    $cust_name = trim($_POST['ad_name'] ?? '');
+    $cust_phone = trim($_POST['ad_phone'] ?? '');
+    $ad_title = trim($_POST['ad_title'] ?? '');
+    $ad_desc = trim($_POST['ad_desc'] ?? '');
+    $package_type = intval($_POST['ad_package'] ?? 1);
+    $amount_paid = ($package_type === 15) ? 10.00 : 1.00;
+    $wish_ref = trim($_POST['wish_ref'] ?? '');
+    $image_url = trim($_POST['ad_image'] ?? '');
+
+    if (!empty($cust_name) && !empty($cust_phone) && !empty($ad_title) && !empty($wish_ref)) {
+        $stmt = $conn->prepare("INSERT INTO customer_ads (customer_name, phone, title, description, image_url, package_type, amount_paid, wish_ref, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending')");
+        $stmt->bind_param("sssssids", $cust_name, $cust_phone, $ad_title, $ad_desc, $image_url, $package_type, $amount_paid, $wish_ref);
+        if ($stmt->execute()) {
+            $toast_message = "تم إرسال إعلانك بنجاح! سيتم مراجعته ونشره فوراً ✅";
+        }
+        $stmt->close();
+    } else {
+        $toast_message = "الرجاء تعبئة جميع الحقول المطلوبة ورقم سند Wish!";
+    }
+}
+
 $categories_sql = "SELECT DISTINCT category FROM products WHERE category IS NOT NULL AND category != ''";
 $categories_result = $conn->query($categories_sql);
 ?>
@@ -100,7 +122,7 @@ $categories_result = $conn->query($categories_sql);
         
         /* Modals */
         .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
-        .modal-content { background-color: white; margin: 6% auto; padding: 25px; border-radius: 14px; width: 90%; max-width: 500px; box-shadow: 0 5px 25px rgba(0,0,0,0.3); max-height: 85vh; overflow-y: auto; position: relative; }
+        .modal-content { background-color: white; margin: 5% auto; padding: 20px; border-radius: 14px; width: 90%; max-width: 500px; box-shadow: 0 5px 25px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto; position: relative; }
         .close-btn { color: #aaa; float: left; font-size: 26px; font-weight: bold; cursor: pointer; }
         .close-btn:hover { color: black; }
         .wish-box { background: #e8f8f5; border: 1px dashed #1abc9c; padding: 12px; border-radius: 8px; margin-bottom: 15px; font-size: 13px; color: #16a085; }
@@ -118,7 +140,7 @@ $categories_result = $conn->query($categories_sql);
 <body>
 
 <div class="announcement-bar">
-    <marquee behavior="scroll" direction="right">🔥 أهلاً بكم في Ali And Store - تسوق مباشرة أو أضف إعلانك (إعلان 1$ | 15 إعلان بـ 10$) عبر ⚡ WPAY! 🔥</marquee>
+    <marquee behavior="scroll" direction="right">🔥 أهلاً بكم في Ali And Store - إعلان واحد بـ 1$ أو باقة 15 إعلاناً بـ 10$ عبر Wish Money! 🔥</marquee>
 </div>
 
 <header>
@@ -152,7 +174,6 @@ $categories_result = $conn->query($categories_sql);
 </div>
 
 <div class="container">
-    <!-- إعلانات الزباين (Bento Grid) المعتمدة -->
     <div class="category-title">🌟 إعلانات الزباين المميزة</div>
     <div class="ads-bento-grid">
         <?php
@@ -185,7 +206,6 @@ $categories_result = $conn->query($categories_sql);
         ?>
     </div>
 
-    <!-- أقسام المنتجات الأساسية (طلب مباشر عبر واتساب) -->
     <?php
     if ($categories_result && $categories_result->num_rows > 0) {
         while ($cat_row = $categories_result->fetch_assoc()) {
@@ -222,7 +242,6 @@ $categories_result = $conn->query($categories_sql);
 
 <button onclick="scrollToTop()" id="scrollTopBtn" title="العودة للأعلى">⬆</button>
 
-<!-- نافذة المنيو المنبثقة -->
 <div id="menuModal" class="modal">
     <div class="modal-content" style="max-width: 340px; text-align: center;">
         <span class="close-btn" onclick="toggleMenuModal()">&times;</span>
@@ -243,12 +262,22 @@ $categories_result = $conn->query($categories_sql);
     </div>
 </div>
 
-<!-- Modal إضافة إعلان مع اختيار الباقة والتوجيه لـ WPAY -->
 <div id="adModal" class="modal">
     <div class="modal-content">
         <span class="close-btn" onclick="toggleAdModal()">&times;</span>
         <h2 style="color:var(--primary-color); margin-top:0;">📢 إضافة إعلان جديد</h2>
-        <form id="adFormElement" action="init_wpay.php" method="POST">
+        
+        <div class="wish-box">
+            <b>💳 أسعار الإعلانات عبر Wish Money:</b><br>
+            <label style="cursor:pointer; display:block; margin:4px 0;"><input type="radio" name="ad_package_choice" value="1" data-price="1.00" checked onchange="updatePrice()"> إعلان واحد (1$)</label>
+            <label style="cursor:pointer; display:block; margin:4px 0;"><input type="radio" name="ad_package_choice" value="15" data-price="10.00" onchange="updatePrice()"> باقة 15 إعلاناً (10$)</label>
+            <div style="margin-top:6px; border-top:1px dashed #1abc9c; padding-top:4px;">
+                الرجاء تحويل المبلغ إلى رقم Wish: <b>03-000000 (Ali Store)</b><br>
+                المبلغ المطلوب: <strong id="adPriceDisplay" style="color:#d35400;">1$</strong>
+            </div>
+        </div>
+
+        <form method="POST">
             <input type="hidden" name="action" value="submit_ad">
             <input type="hidden" name="ad_package" id="selectedPackageInput" value="1">
             
@@ -257,19 +286,9 @@ $categories_result = $conn->query($categories_sql);
             <div class="form-group"><label>عنوان الإعلان:</label><input type="text" name="ad_title" required></div>
             <div class="form-group"><label>وصف الإعلان:</label><textarea name="ad_desc" rows="3"></textarea></div>
             <div class="form-group"><label>رابط الصورة (اختياري):</label><input type="url" name="ad_image" placeholder="https://..."></div>
+            <div class="form-group"><label>رقم سند تحويل Wish Money:</label><input type="text" name="wish_ref" placeholder="أدخل رقم السند هنا" required></div>
             
-            <div class="wish-box" style="margin: 12px 0;">
-                <b>💳 اختيار باقة الإعلانات عبر ⚡ WPAY:</b><br>
-                <label style="cursor:pointer;"><input type="radio" name="ad_package_choice" value="1" data-price="1.00" checked onchange="syncPackage(this)"> إعلان واحد (1$)</label><br>
-                <label style="cursor:pointer;"><input type="radio" name="ad_package_choice" value="15" data-price="10.00" onchange="syncPackage(this)"> باقة 15 إعلاناً (10$)</label>
-                <div style="margin-top:8px; border-top:1px dashed #1abc9c; padding-top:6px;">
-                    المبلغ الإجمالي للدفع: <strong id="adPriceDisplay" style="color:#d35400; font-size:16px;">1$</strong>
-                </div>
-            </div>
-
-            <button type="submit" class="btn" style="background:#e74c3c; margin-top:10px; width:100%;">
-                <span style="font-weight:bold;">متابعة الدفع عبر ⚡ WPAY</span>
-            </button>
+            <button type="submit" class="btn" style="background:#27ae60; margin-top:10px; width:100%;">إرسال الإعلان للمراجعة</button>
         </form>
     </div>
 </div>
@@ -288,11 +307,14 @@ function toggleMenuModal() { let m = document.getElementById('menuModal'); m.sty
 function toggleColorPopup() { let p = document.getElementById('colorPopup'); p.style.display = p.style.display === 'flex' ? 'none' : 'flex'; }
 function changeTheme(p, a) { document.documentElement.style.setProperty('--primary-color', p); document.documentElement.style.setProperty('--accent-color', a); document.getElementById('colorPopup').style.display='none'; }
 
-function syncPackage(radio) {
-    let price = radio.getAttribute('data-price');
-    let val = radio.value;
-    document.getElementById('adPriceDisplay').innerText = price + '$';
-    document.getElementById('selectedPackageInput').value = val;
+function updatePrice() {
+    let selected = document.querySelector('input[name="ad_package_choice"]:checked');
+    if(selected) {
+        let price = selected.getAttribute('data-price');
+        let val = selected.value;
+        document.getElementById('adPriceDisplay').innerText = price + '$';
+        document.getElementById('selectedPackageInput').value = val;
+    }
 }
 
 function filterProducts() {
